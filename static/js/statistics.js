@@ -18,6 +18,12 @@ console.log('statistics.js loaded');
 		return month === 1 ? {year: year-1, month: 12} : {year, month: month-1};
 	}
 
+	function addMonth(year, month, delta) {
+		// delta: +1이면 다음달, -1이면 이전달
+		const d = new Date(year, month - 1 + delta, 1);
+		return { year: d.getFullYear(), month: d.getMonth() + 1 };
+	}
+
 	function alignToLen(arr, len){
 		if (arr.length === len) return arr.slice();
 		if (arr.length > len)   return arr.slice(0, len);
@@ -36,6 +42,19 @@ console.log('statistics.js loaded');
 		expense: { total: 0, card: 0, transfer: 0, other: 0 },
 	};
 
+	// ---------- 기간 상태 (전역) ----------
+	const today = new Date();
+
+	// 월간(합계/지출/카테고리)에서 공통으로 사용할 기준 연/월
+	let monthYM = {
+		year: today.getFullYear(),
+		month: today.getMonth() + 1,
+	};
+
+	// 주간 통계: 0이면 "최근 10주", 1이면 "그 이전 10주", 2면 "그 이전 10주" …
+	let weeklyOffset = 0;
+	
+
 	// ---------- Tabs ----------
 	function bindTabs() {
 		document.querySelectorAll('.tab').forEach(t => {
@@ -53,6 +72,78 @@ console.log('statistics.js loaded');
 		});
 		});
 	}
+
+		// ---------- 기간 이동 버튼 바인딩 ----------
+		function bindRangeButtons() {
+			const cy = today.getFullYear();
+			const cm = today.getMonth() + 1;
+	
+			const clampToNow = (y, m) => {
+				// 미래(이번달 이후)로는 못 가게 막기
+				if (y > cy || (y === cy && m > cm)) return { year: cy, month: cm };
+				return { year: y, month: m };
+			};
+	
+			// --- 월간 합계/지출: 한 달씩 이동 ---
+			const before1 = document.getElementById('beforeOp1');
+			const after1 = document.getElementById('afterOp1');
+			const before2 = document.getElementById('beforeOp2');
+			const after2 = document.getElementById('afterOp2');
+	
+			if (before1) before1.addEventListener('click', async () => {
+				monthYM = addMonth(monthYM.year, monthYM.month, -1);
+				await updateMonthlyTotalSection();
+				await updateMonthlySpendSection();
+				updateCategoryPills();
+			});
+	
+			if (after1) after1.addEventListener('click', async () => {
+				const next = addMonth(monthYM.year, monthYM.month, +1);
+				const clamped = clampToNow(next.year, next.month);
+				// 이번달보다 더 미래면 무시
+				if (clamped.year === monthYM.year && clamped.month === monthYM.month) return;
+	
+				monthYM = clamped;
+				await updateMonthlyTotalSection();
+				await updateMonthlySpendSection();
+				updateCategoryPills();
+			});
+	
+			// 월간 지출 카드의 화살표도 같은 monthYM을 공유하도록 동일 동작
+			if (before2) before2.addEventListener('click', async () => {
+				monthYM = addMonth(monthYM.year, monthYM.month, -1);
+				await updateMonthlyTotalSection();
+				await updateMonthlySpendSection();
+				updateCategoryPills();
+			});
+	
+			if (after2) after2.addEventListener('click', async () => {
+				const next = addMonth(monthYM.year, monthYM.month, +1);
+				const clamped = clampToNow(next.year, next.month);
+				if (clamped.year === monthYM.year && clamped.month === monthYM.month) return;
+	
+				monthYM = clamped;
+				await updateMonthlyTotalSection();
+				await updateMonthlySpendSection();
+				updateCategoryPills();
+			});
+	
+			// --- 주간 합계: 10주씩 이동 ---
+			const before3 = document.getElementById('beforeOp3');
+			const after3 = document.getElementById('afterOp3');
+	
+			if (before3) before3.addEventListener('click', async () => {
+				weeklyOffset += 1; // 과거로 10주 더
+				await updateWeeklySection();
+			});
+	
+			if (after3) after3.addEventListener('click', async () => {
+				if (weeklyOffset === 0) return; // 더 앞으로는 못감(현재가 기준)
+				weeklyOffset -= 1;
+				await updateWeeklySection();
+			});
+		}
+	
 
 	// ---------- 공통 Chart.js 렌더 ----------
 	function renderChart(canvas, datasets, labels, extraOptions = {}) {
@@ -83,53 +174,50 @@ console.log('statistics.js loaded');
 	}
 
 	// ---------- 월간 합계 (수입 - 지출 = 순변화) ----------
-	async function updateMonthlyTotalSection() {
-		const now = new Date();
-		const yyyy = now.getFullYear();
-		const mm = now.getMonth() + 1;
+		// ---------- 월간 합계 (수입 - 지출 = 순변화) ----------
+		async function updateMonthlyTotalSection(year = monthYM.year, month = monthYM.month) {
+			// 화면 상단 기간 표시
+			setRangeFor('rangeMonthly', year, month);
 	
-		// 기존 기간 라벨 함수 그대로 사용
-		setRangeFor('rangeMonthly', yyyy, mm);
+			// {labels, cumSpend, cumIncome} 반환 - /api/stats/monthly-spend 응답
+			const { labels = [], cumSpend = [], cumIncome = [] } =
+				await fetchMonthlySpend(year, month);
 	
-		// {labels, cumSpend, cumIncome}를 반환 - /api/stats/monthly-total 응답
-		const { labels = [], cumSpend = [], cumIncome = [] } =
-		await fetchMonthlySpend(yyyy, mm);
+			// 누적 순변화 = 누적수입 − 누적지출
+			const len = Math.max(cumIncome.length, cumSpend.length);
+			const cumNet = Array.from({ length: len }, (_, i) =>
+				(cumIncome[i] || 0) - (cumSpend[i] || 0)
+			);
 	
-		// 누적 순변화 = 누적수입 − 누적지출
-		const len = Math.max(cumIncome.length, cumSpend.length);
-		const cumNet = Array.from({ length: len }, (_, i) =>
-		(cumIncome[i] || 0) - (cumSpend[i] || 0)
-		);
+			// KPI (오늘 값/증감)
+			const lastVal = cumNet.at(-1) || 0;
+			const prevVal = cumNet.at(-2) || 0;
+			const delta = lastVal - prevVal;
 	
-		// KPI (오늘 값/증감)
-		const lastVal = cumNet.at(-1) || 0;
-		const prevVal = cumNet.at(-2) || 0;
-		const delta = lastVal - prevVal;
+			document.getElementById('mtSum').textContent = won(lastVal);
+			const deltaEl = document.getElementById('mtDelta');
+			deltaEl.textContent = (delta >= 0 ? '+' : '') + won(delta) + ' (오늘 증감)';
+			deltaEl.style.color = delta >= 0 ? 'var(--good)' : '#ef4444';
 	
-		document.getElementById('mtSum').textContent = won(lastVal);
-		const deltaEl = document.getElementById('mtDelta');
-		deltaEl.textContent = (delta >= 0 ? '+' : '') + won(delta) + ' (오늘 증감)';
-		deltaEl.style.color = delta >= 0 ? 'var(--good)' : '#ef4444';
+			const canvas = document.getElementById('chartMonthlyTotal');
+			renderChart(
+				canvas,
+				[
+					{
+						label: '이달 누적 순변화 (수입 − 지출)',
+						data: cumNet,
+						borderColor: '#3b82f6',
+						backgroundColor: 'rgba(59,130,246,0.15)',
+						borderWidth: 3,
+						tension: 0.3,
+						fill: true,
+						pointRadius: 0,
+					},
+				],
+				labels
+			);
+		}
 	
-		// renderChart(canvasEl, datasets[], labels) 
-		const canvas = document.getElementById('chartMonthlyTotal');
-		renderChart(
-		canvas,
-		[
-			{
-			label: '이달 누적 순변화 (수입 − 지출)',
-			data: cumNet,
-			borderColor: '#3b82f6',
-			backgroundColor: 'rgba(59,130,246,0.15)',
-			borderWidth: 3,
-			tension: 0.3,
-			fill: true,
-			pointRadius: 0
-			}
-		],
-		labels
-		);
-	}
 
 	// --- 이번 달 남은 돈 카드 업데이트 ---
 	async function updateBalanceCard() {
@@ -167,55 +255,65 @@ console.log('statistics.js loaded');
   
 
 	// ---------- 월간 지출 (이번달 지출 vs 지난달 지출 비교) ----------
-	async function updateMonthlySpendSection() {
-		const now = new Date();
-		const y = now.getFullYear();
-		const m = now.getMonth() + 1;
-		const {year: py, month: pm} = prevYM(y, m);
-
-		setRangeFor('rangeMonthlySpend', y, m);
-
-		// 이번달/지난달 각각 요청
-		const [{ labels: labelsCur = [], cumSpend: cumSpendCur = [] },
-			{ labels: labelsPrev = [], cumSpend: cumSpendPrev = [] }] =
-		await Promise.all([ fetchMonthlySpend(y, m), fetchMonthlySpend(py, pm) ]);
-
-		// 라벨은 이번달 기준, 지난달 누적은 길이 맞춰 정렬
-		const labels = labelsCur;
-		const prevAligned = alignToLen(cumSpendPrev, labels.length);
-
-		// KPI: 이번달 총 지출 + 지난달 대비 증감
-		const curTotal = (cumSpendCur.at(-1) || 0);
-		const prevSameDay = (prevAligned.at(-1) || 0);
-		const diff = curTotal - prevSameDay;
-		document.getElementById('msSum').textContent = `오늘까지 ${won(curTotal)} 썼어요`;
-		document.getElementById('msDelta').textContent =
-		diff >= 0 ? `지난달보다 ${won(diff)} 더 쓰는 중` : `지난달보다 ${won(-diff)} 덜 쓰는 중`;
-
-		const canvas = document.getElementById('chartMonthlySpend'); 
-		renderChart(canvas, [
-		{
-			label: '이번달 누적 지출',
-			data: cumSpendCur,
-			borderColor: '#3b82f6',               
-			backgroundColor: 'rgba(59,130,246,0.15)',
-			borderWidth: 3,
-			tension: 0.3,
-			fill: true,
-			pointRadius: 0
-		},
-		{
-			label: '지난달 누적 지출',
-			data: prevAligned,
-			borderColor: '#9ca3af',               // 회색
-			backgroundColor: 'rgba(156,163,175,0.12)',
-			borderWidth: 2,
-			tension: 0.3,
-			fill: true,
-			pointRadius: 0
+		// ---------- 월간 지출 (이번달 지출 vs 지난달 지출 비교) ----------
+		async function updateMonthlySpendSection(year = monthYM.year, month = monthYM.month) {
+			const { year: py, month: pm } = prevYM(year, month);
+	
+			setRangeFor('rangeMonthlySpend', year, month);
+	
+			// 이번달/지난달 각각 요청
+			const [
+				{ labels: labelsCur = [], cumSpend: cumSpendCur = [] },
+				{ labels: labelsPrev = [], cumSpend: cumSpendPrev = [] },
+			] = await Promise.all([
+				fetchMonthlySpend(year, month),
+				fetchMonthlySpend(py, pm),
+			]);
+	
+			// 라벨은 이번달 기준, 지난달 누적은 길이 맞춰 정렬
+			const labels = labelsCur;
+			const prevAligned = alignToLen(cumSpendPrev, labels.length);
+	
+			// KPI: 이번달 총 지출 + 지난달 대비 증감
+			const curTotal = cumSpendCur.at(-1) || 0;
+			const prevSameDay = prevAligned.at(-1) || 0;
+			const diff = curTotal - prevSameDay;
+	
+			document.getElementById('msSum').textContent = `오늘까지 ${won(curTotal)} 썼어요`;
+			document.getElementById('msDelta').textContent =
+				diff >= 0
+					? `지난달보다 ${won(diff)} 더 쓰는 중`
+					: `지난달보다 ${won(-diff)} 덜 쓰는 중`;
+	
+			const canvas = document.getElementById('chartMonthlySpend');
+			renderChart(
+				canvas,
+				[
+					{
+						label: '이번달 누적 지출',
+						data: cumSpendCur,
+						borderColor: '#3b82f6',
+						backgroundColor: 'rgba(59,130,246,0.15)',
+						borderWidth: 3,
+						tension: 0.3,
+						fill: true,
+						pointRadius: 0,
+					},
+					{
+						label: '지난달 누적 지출',
+						data: prevAligned,
+						borderColor: '#9ca3af',
+						backgroundColor: 'rgba(156,163,175,0.12)',
+						borderWidth: 2,
+						tension: 0.3,
+						fill: true,
+						pointRadius: 0,
+					},
+				],
+				labels
+			);
 		}
-		], labels);
-	}
+	
 
 	  
 
@@ -225,31 +323,27 @@ console.log('statistics.js loaded');
 		return res.json(); // { total, items:[{category, amount, pct}] }
 	}
 
-	async function updateCategoryPills() {
-		const now = new Date();
-		const y = now.getFullYear();
-		const m = now.getMonth() + 1;
-		
+	async function updateCategoryPills(year = monthYM.year, month = monthYM.month) {
 		const wrap = document.getElementById('categoryBreak');
 		if (!wrap) return;
 		wrap.innerHTML = '';
-	
+
 		try {
-			const { items = [] } = await fetchMonthlyCats(y, m);
-		
+			const { items = [] } = await fetchMonthlyCats(year, month);
+
 			if (!items.length) {
-			const span = document.createElement('span');
-			span.className = 'pill';
-			span.textContent = '지출 데이터 없음';
-			wrap.appendChild(span);
-			return;
+				const span = document.createElement('span');
+				span.className = 'pill';
+				span.textContent = '지출 데이터 없음';
+				wrap.appendChild(span);
+				return;
 			}
-		
+
 			items.forEach(({ category, pct }) => {
-			const pill = document.createElement('span');
-			pill.className = 'pill';
-			pill.textContent = `${category} ${Math.round(pct)}%`;
-			wrap.appendChild(pill);
+				const pill = document.createElement('span');
+				pill.className = 'pill';
+				pill.textContent = `${category} ${Math.round(pct)}%`;
+				wrap.appendChild(pill);
 			});
 		} catch (e) {
 			console.error(e);
@@ -259,42 +353,61 @@ console.log('statistics.js loaded');
 			wrap.appendChild(span);
 		}
 	}
+
 	  
-	async function fetchWeekly(n = 10) {
-		const res = await fetch(`/api/stats/weekly?n=${n}`);
+	async function fetchWeekly(n = 10, offset = 0) {
+		const res = await fetch(`/api/stats/weekly?n=${n}&offset=${offset}`);
 		if (!res.ok) throw new Error('weekly api failed');
 		const data = await res.json();
 		data.net = (data.net || []).map(v => Number(v) || 0);
 		return data;
 	}
+
 	  
 	async function updateWeeklySection() {
 		const n = 10;
-		const { labels = [], net = [] } = await (await fetch(`/api/stats/weekly?n=${n}`)).json();
-	  
+		const { labels = [], net = [] } = await fetchWeekly(n, weeklyOffset);
+
 		// KPI
 		document.getElementById('wtSum').textContent =
-		  (Math.round(net.reduce((a,b) => a + b, 0))).toLocaleString('ko-KR') + '원';
-	  
+			(Math.round(net.reduce((a, b) => a + b, 0))).toLocaleString('ko-KR') + '원';
+
 		// 차트
 		const canvas = document.getElementById('chartWeekly');
-		renderChart(canvas, [{
-			label: '주간 순변화 (수입 - 지출)',
-			data: net,
-			borderColor: '#3b82f6',
-			backgroundColor: 'rgba(59,130,246,0.15)',
-			borderWidth: 3,
-			tension: 0.3,
-			fill: true,
-			pointRadius: 0
-		}], labels, {
-			plugins: {
-				tooltip: { callbacks: { label: (ctx) => (Math.round(ctx.parsed.y)).toLocaleString('ko-KR')+'원' } }
-			},
-		  	scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString('ko-KR') } } }
-		});
-	  }
-	  
+		renderChart(
+			canvas,
+			[
+				{
+					label: '주간 순변화 (수입 - 지출)',
+					data: net,
+					borderColor: '#3b82f6',
+					backgroundColor: 'rgba(59,130,246,0.15)',
+					borderWidth: 3,
+					tension: 0.3,
+					fill: true,
+					pointRadius: 0,
+				},
+			],
+			labels,
+			{
+				plugins: {
+					tooltip: {
+						callbacks: {
+							label: ctx =>
+								(Math.round(ctx.parsed.y)).toLocaleString('ko-KR') + '원',
+						},
+					},
+				},
+				scales: {
+					y: {
+						beginAtZero: true,
+						ticks: { callback: v => v.toLocaleString('ko-KR') },
+					},
+				},
+			}
+		);
+	}
+
 	  
 
 	function renderBalance() {
@@ -317,6 +430,7 @@ console.log('statistics.js loaded');
 	// ---------- 초기화 ----------
 	async function init() {
 		bindTabs();
+		bindRangeButtons();
 		renderBalance();
 		await updateMonthlyTotalSection();  
 		await updateMonthlySpendSection();  

@@ -319,9 +319,16 @@ def stats_monthly_cats():
 @app.route('/api/stats/weekly')
 def stats_weekly():
     user_id = session.get('id')
-    n = int(request.args.get('n', 10)) # 최근 10주가 기본값
-    data = ledger_db.select_recent_weeks(user_id, n)
+    n = int(request.args.get('n', 10))      # 한 번에 볼 주 수 (기본 10주)
+    offset = int(request.args.get('offset', 0))  # 0: 최근 10주, 1: 그 이전 10주, ...
+
+    # 오늘 기준으로 offset 주 만큼 과거를 "종료 주"로 삼음
+    today = date.today()
+    end_date = today - timedelta(weeks=offset)
+
+    data = ledger_db.select_recent_weeks(user_id, n_weeks=n, end_date=end_date)
     return jsonify(data)
+
 
 # ====================== 8. 서버 실행 ======================
 if __name__ == "__main__":
