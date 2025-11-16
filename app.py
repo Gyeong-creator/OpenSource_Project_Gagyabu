@@ -1,3 +1,4 @@
+
 # --- 1. 라이브러리 및 모듈 임포트 ---
 import modules.user as user_db       # 'modules/user.py'를 user_db 별명으로 가져옴
 import modules.ledger as ledger_db   # 'modules/ledger.py'를 ledger_db 별명으로 가져옴
@@ -7,6 +8,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from datetime import timedelta, date # 날짜/시간 처리를 위함
 from functools import wraps
 from calendar import monthrange      # 특정 월의 일수를 계산하기 위함
+
 
 # ====================== 2. Flask 앱 초기화 및 설정 ======================
 app = Flask(__name__)
@@ -231,8 +233,8 @@ def edit_transaction():
 
     return jsonify({"error": "Request must be JSON"}), 400
 
+  
 # ====================== 6. 인증 API (로그인/로그아웃) ======================
-
 # (API) '로그인 실행' (login.js에서 호출)
 @app.route('/login_check', methods=['POST'])
 def login():

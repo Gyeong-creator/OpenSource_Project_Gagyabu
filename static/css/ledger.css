@@ -297,6 +297,6 @@ tr:hover .edit-btn {
 /* 마지막 '버튼' 칸 스타일 */
 #transaction-list td:last-child {
     text-align: right;
-    min-width: 120px; /* 버튼들이 한 줄에 다 보이도록 최소 너비 설정 */
-    white-space: nowrap; /* 버튼들이 줄바꿈되지 않도록 설정 */
+    min-width: 120px;
+    white-space: nowrap;
 }
