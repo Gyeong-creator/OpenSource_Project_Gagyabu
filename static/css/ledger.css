@@ -259,6 +259,20 @@ tr:hover .edit-btn {
     box-sizing: border-box;
 }
 
+.edit-description {
+    width: 150px; /* '내역' 칸의 너비 */
+}
+
+.edit-amount {
+    width: 100px; /* '금액' 칸의 너비*/
+}
+
+#transaction-list td:last-child {
+    text-align: right;
+    min-width: 120px;
+    white-space: nowrap; 
+}
+
 /* 1. '오늘' 날짜 스타일 */
 .day.today {
     background-color: #d8e2f2; /* 호버 색상과 동일 */
