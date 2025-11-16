@@ -90,11 +90,22 @@ console.log('statistics.js loaded');
 			const before2 = document.getElementById('beforeOp2');
 			const after2 = document.getElementById('afterOp2');
 	
+			function updateMonthNavButtons() {
+				const isLatest =
+					monthYM.year === cy && monthYM.month === cm;
+	
+				[after1, after2].forEach(btn => {
+					if (!btn) return;
+					btn.classList.toggle('hidden', isLatest); // hidden = display:none;
+				});
+			}
+
 			if (before1) before1.addEventListener('click', async () => {
 				monthYM = addMonth(monthYM.year, monthYM.month, -1);
 				await updateMonthlyTotalSection();
 				await updateMonthlySpendSection();
 				updateCategoryPills();
+				updateMonthNavButtons();
 			});
 	
 			if (after1) after1.addEventListener('click', async () => {
@@ -107,6 +118,7 @@ console.log('statistics.js loaded');
 				await updateMonthlyTotalSection();
 				await updateMonthlySpendSection();
 				updateCategoryPills();
+				updateMonthNavButtons();
 			});
 	
 			// 월간 지출 카드의 화살표도 같은 monthYM을 공유하도록 동일 동작
@@ -115,6 +127,7 @@ console.log('statistics.js loaded');
 				await updateMonthlyTotalSection();
 				await updateMonthlySpendSection();
 				updateCategoryPills();
+				updateMonthNavButtons();
 			});
 	
 			if (after2) after2.addEventListener('click', async () => {
@@ -126,22 +139,34 @@ console.log('statistics.js loaded');
 				await updateMonthlyTotalSection();
 				await updateMonthlySpendSection();
 				updateCategoryPills();
+				updateMonthNavButtons();
 			});
 	
 			// --- 주간 합계: 10주씩 이동 ---
 			const before3 = document.getElementById('beforeOp3');
 			const after3 = document.getElementById('afterOp3');
 	
+			function updateWeeklyButtons() {
+				if (!after3) return;
+				// weeklyOffset === 0 이면 최신 10주 → '>' 숨김
+				after3.classList.toggle('hidden', weeklyOffset === 0);
+			  }
+
 			if (before3) before3.addEventListener('click', async () => {
 				weeklyOffset += 1; // 과거로 10주 더
 				await updateWeeklySection();
+				updateWeeklyButtons();
 			});
 	
 			if (after3) after3.addEventListener('click', async () => {
 				if (weeklyOffset === 0) return; // 더 앞으로는 못감(현재가 기준)
 				weeklyOffset -= 1;
 				await updateWeeklySection();
+				updateWeeklyButtons();
 			});
+
+			updateMonthNavButtons();
+			updateWeeklyButtons();
 		}
 	
 
