@@ -2,8 +2,7 @@
 # --- 1. 라이브러리 및 모듈 임포트 ---
 import modules.user as user_db       # 'modules/user.py'를 user_db 별명으로 가져옴
 import modules.ledger as ledger_db   # 'modules/ledger.py'를 ledger_db 별명으로 가져옴
-import modules.config as config           # 'modules/config.py'를 config 별명으로 가져옴
-from modules.ledger import select_ledger_by_user, select_transactions_by_date
+from py import config                # 'py' 폴더에서 config를 찾음
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from datetime import timedelta, date # 날짜/시간 처리를 위함
 from functools import wraps
