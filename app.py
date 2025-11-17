@@ -2,7 +2,8 @@
 # --- 1. 라이브러리 및 모듈 임포트 ---
 import modules.user as user_db       # 'modules/user.py'를 user_db 별명으로 가져옴
 import modules.ledger as ledger_db   # 'modules/ledger.py'를 ledger_db 별명으로 가져옴
-import modules.config as config           # 'modules/config.py'를 config 별명으로 가져옴
+import modules.config as config          # 'modules/config.py'를 config 별명으로 가져옴
+import re                           # 비밀번호 검증 함수를 위함
 from modules.ledger import select_ledger_by_user, select_transactions_by_date
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from datetime import timedelta, date # 날짜/시간 처리를 위함
@@ -25,6 +26,17 @@ app.config.update(
     # SESSION_COOKIE_SECURE=True # (HTTPS 배포 시 활성화)
 )
 
+# ====================== 추가. 비밀번호 검증 함수 ============================
+def is_valid_password(password: str) -> bool:
+    if len(password) < 8:
+        return False
+    if not re.search(r'[A-Za-z]', password):
+        return False
+    if not re.search(r'\d', password):
+        return False
+    if not re.search(r'[^\w\s]', password):
+        return False
+    return True
 
 # ====================== 3. 전처리 함수 (모든 요청 전에 실행) ======================
 
@@ -40,7 +52,7 @@ def inject_user():
 @app.before_request
 def require_login_for_all_except_public():
     # 로그인이 필요 없는 페이지(엔드포인트) 목록
-    public_endpoints = {'login_view', 'login', 'static'}  
+    public_endpoints = {'login_view', 'login', 'static', 'register_view','register_process'}  
     ep = (request.endpoint or '').split('.')[0] # 현재 요청된 엔드포인트 이름
 
     # 요청된 페이지가 public_endpoints에 속하면, 검사 없이 통과
@@ -78,6 +90,10 @@ def login_view():
 def ledger_view():
     # (@before_request가 이미 로그인 여부를 검사했으므로, 이 함수는 실행됨)
     return render_template('ledger.html')
+# 추가. 회원가입 페이지 라우팅
+@app.route('/register')
+def register_view():
+    return render_template('register.html')
 
 # 통계 페이지 뷰
 @app.route('/statistics')
@@ -233,7 +249,46 @@ def edit_transaction():
 
     return jsonify({"error": "Request must be JSON"}), 400
 
-  
+# ========================== 추가. 회원가입 처리 ==============================
+@app.route('/register_process', methods=['POST'])
+def register_process():
+    user_id = request.form.get('user_id')
+    user_name = request.form.get('user_name')
+    password = request.form.get('password')
+
+    # 기본 입력값 확인
+    if not user_id or not user_name or not password:
+        return jsonify({'success': False, 'message': '모든 값을 입력해주세요.'}), 400
+
+    # 비밀번호 유효성 검사
+    if not is_valid_password(password):
+        return jsonify({'success': False, 'message': '비밀번호가 유효하지 않습니다.'}), 400
+
+    # DB 연결
+    conn = user_db.db_connector()
+    cur = conn.cursor()
+
+    # 아이디 중복 체크
+    cur.execute("SELECT id FROM user WHERE id=%s", (user_id,))
+    if cur.fetchone():
+        return jsonify({'success': False, 'message': '이미 사용 중인 아이디입니다.'}), 400
+
+    # 사용자 이름 중복 체크 (name 컬럼은 실제 DB 스키마에 맞게 수정 필요)
+    cur.execute("SELECT user_name FROM user WHERE user_name=%s", (user_name,))
+    if cur.fetchone():
+        return jsonify({'success': False, 'message': '이미 사용 중인 이름입니다.'}), 400
+
+    # DB INSERT
+    cur.execute(
+        "INSERT INTO user (id, user_name, password) VALUES (%s, %s, %s)",
+        (user_id, user_name, password)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({'success': True, 'message': '회원가입이 완료되었습니다!'}), 200
+
 # ====================== 6. 인증 API (로그인/로그아웃) ======================
 # (API) '로그인 실행' (login.js에서 호출)
 @app.route('/login_check', methods=['POST'])

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<h2>회원가입 테스트</h2>
+
+<form id="registerForm">
+    <label>아이디</label><br>
+    <input type="text" name="user_id" id="user_id"><br><br>
+
+    <label>사용자 이름</label><br>
+    <input type="text" name="user_name" id="user_name"><br><br>
+
+    <label>비밀번호</label><br>
+    <input type="password" name="password" id="password"><br><br>
+
+    <button type="button" onclick="submitRegister()">회원가입</button>
+</form>
+
+<p id="result" style="margin-top:16px; font-weight:bold;"></p>
+
+<script>
+function submitRegister() {
+    const form = document.getElementById('registerForm');
+    const formData = new FormData(form);
+
+    fetch("/register_process", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        const p = document.getElementById("result");
+        p.textContent = data.message || (data.success ? "성공" : "실패");
+        p.style.color = data.success ? "green" : "red";
+    })
+    .catch(err => {
+        document.getElementById("result").textContent = "요청 오류: " + err;
+    });
+}
+</script>
+
+
