@@ -321,9 +321,7 @@ function toggleEditMode(tr, isEditing) {
     }
 }
 
-/**
- * (수정) '저장' 버튼 클릭 시 서버로 전송하는 함수
- */
+/* '저장' 버튼 클릭 시 서버로 전송하는 함수 */
 async function handleSave(tr, transactionId) {
     // 수정용 input/select 에서 새 값 가져오기
     const newDate = tr.querySelector('.edit-date').value;
@@ -375,9 +373,7 @@ async function handleSave(tr, transactionId) {
 }
 
 
-/**
- * '삭제' 함수 (변경: 새로고침 로직 수정)
- */
+/* '삭제' 함수 (변경: 새로고침 로직 수정) */
 async function handleDelete(transactionId) {
     
     if (!confirm('정말로 이 내역을 삭제하시겠습니까?')) {
@@ -404,9 +400,7 @@ async function handleDelete(transactionId) {
     await refreshCurrentList();
 }
 
-/**
- * (변경) 거래 내역 리스트 업데이트 함수 (수정 기능 추가)
- */
+/* 거래 내역 리스트 업데이트 함수 (수정 기능 추가) */
 function updateList(transactions) {
     console.log(transactions); // (디버깅용)
     if (transactions.length === 0) {
