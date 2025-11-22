@@ -50,6 +50,12 @@ console.log('statistics.js loaded');
 			const balanceCard = document.getElementById("balanceCard");
 			if (t.dataset.panel === "monthlyTotal") balanceCard.classList.remove("hidden");
 			else balanceCard.classList.add("hidden");
+
+			// 월간 지출 탭일 때만 카테고리 카드 보이기
+            if (categoryCard) {
+                if (t.dataset.panel === "monthlySpend") categoryCard.classList.remove("hidden");
+                else categoryCard.classList.add("hidden");
+            }
 		});
 		});
 	}
