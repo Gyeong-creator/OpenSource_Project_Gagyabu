@@ -1,7 +1,9 @@
 # --- 1. 라이브러리 및 모듈 임포트 ---
 import modules.user as user_db       # 'modules/user.py'를 user_db 별명으로 가져옴
 import modules.ledger as ledger_db   # 'modules/ledger.py'를 ledger_db 별명으로 가져옴
-import modules.config as config      
+import modules.config as config          # 'modules/config.py'를 config 별명으로 가져옴
+import re                           # 비밀번호 검증 함수를 위함
+from modules.ledger import select_ledger_by_user, select_transactions_by_date
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from datetime import timedelta, date # 날짜/시간 처리를 위함
 from functools import wraps
@@ -20,6 +22,17 @@ app.config.update(
     # SESSION_COOKIE_SECURE=True
 )
 
+# ====================== 추가. 비밀번호 검증 함수 ============================
+def is_valid_password(password: str) -> bool:
+    if len(password) < 8:
+        return False
+    if not re.search(r'[A-Za-z]', password):
+        return False
+    if not re.search(r'\d', password):
+        return False
+    if not re.search(r'[^\w\s]', password):
+        return False
+    return True
 
 DATA_FILE = 'transactions.json'
 
@@ -95,6 +108,10 @@ def register_view():
 @app.route('/ledger')
 def ledger_view():
     return render_template('ledger.html')
+# 추가. 회원가입 페이지 라우팅
+@app.route('/register')
+def register_view():
+    return render_template('register.html')
 
 
 
@@ -277,8 +294,6 @@ def edit_transaction():
 
 
     return jsonify({"error": "Request must be JSON"}), 400
-
-
 
 
 # ====================== auth ======================
