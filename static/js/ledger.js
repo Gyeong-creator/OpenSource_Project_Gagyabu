@@ -18,12 +18,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
- * 달력을 생성하고 화면에 렌더링하는 함수
+ * (수정) 달력을 생성하고 화면에 렌더링하는 함수
  */
 function renderCalendar(date) {
     calendarDiv.innerHTML = '';
     const year = date.getFullYear();
     const month = date.getMonth();
+
+    // --- (신규) '오늘' 날짜 정보 가져오기 ---
+    const today = new Date();
+    const todayDate = today.getDate();
+    const todayMonth = today.getMonth();
+    const todayYear = today.getFullYear();
+    // --- (신규) ---
+
     currentMonthTitle.textContent = `${year}년 ${month + 1}월`;
     const firstDayOfMonth = new Date(year, month, 1);
     const lastDayOfMonth = new Date(year, month + 1, 0);
@@ -39,6 +47,22 @@ function renderCalendar(date) {
         const day = document.createElement('div');
         day.classList.add('day');
         day.textContent = i;
+
+        // --- (신규) '오늘' 및 '선택' 날짜 확인 ---
+        const monthStr = String(month + 1).padStart(2, '0');
+        const dayStr = String(i).padStart(2, '0');
+        const currentDayStr = `${year}-${monthStr}-${dayStr}`;
+
+        // 1. '오늘' 날짜 확인
+        if (i === todayDate && month === todayMonth && year === todayYear) {
+            day.classList.add('today');
+        }
+        // 2. '선택된' 날짜 확인 (global 'selectedDate' 변수와 비교)
+        if (currentDayStr === selectedDate) {
+            day.classList.add('selected');
+        }
+        // --- (신규) ---
+
         day.onclick = () => selectDate(year, month, i);
         calendarDiv.appendChild(day);
     }
@@ -56,7 +80,7 @@ async function refreshCurrentList() {
 }
 
 /**
- * 날짜를 선택했을 때 호출되는 함수
+ * (수정) 날짜를 선택했을 때 호출되는 함수
  */
 async function selectDate(year, month, day) {
     document.getElementById('input-container').classList.remove('centered-prompt');
@@ -64,7 +88,11 @@ async function selectDate(year, month, day) {
 
     const monthStr = String(month + 1).padStart(2, '0');
     const dayStr = String(day).padStart(2, '0');
-    selectedDate = `${year}-${monthStr}-${dayStr}`;
+    selectedDate = `${year}-${monthStr}-${dayStr}`; // ◀ 전역 변수 설정
+
+    // --- (신규) 날짜 클릭 시 달력을 새로고침하여 .selected 클래스 적용 ---
+    renderCalendar(currentDate); 
+    // --- (신규) ---
     
     inputTitle.textContent = `${selectedDate} 내역 입력`;
     form.style.display = 'flex';

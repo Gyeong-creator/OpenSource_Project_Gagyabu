@@ -1,44 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<h2>회원가입 테스트</h2>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Page</title>
 
-<form id="registerForm">
-    <label>아이디</label><br>
-    <input type="text" name="user_id" id="user_id"><br><br>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
 
-    <label>사용자 이름</label><br>
-    <input type="text" name="user_name" id="user_name"><br><br>
+<body class="login-body">
+    <div class="login-container">
+        <div class="logo">📝</div>
+        <h2>Register</h2>
+        
+        <form id="register-form">
+            <div class="input-container">
+                <input type="text" placeholder="Enter your Name (e.g., '홍길동')" class="input-field" required id="username-field">
+            </div>
+            <div class="input-container">
+                <input type="text" placeholder="Enter your ID" class="input-field" required id="id-field">
+            </div>
+            <div class="input-container">
+                <input type="password" placeholder="Enter your password" id="password-field" class="input-field" required>
+            </div>
+            
+            <button type="submit" class="btn" id="register-btn">Sign Up</button>
+        </form>
+    </div>
 
-    <label>비밀번호</label><br>
-    <input type="password" name="password" id="password"><br><br>
+    <script src="{{ url_for('static', filename='js/register.js') }}"></script>
 
-    <button type="button" onclick="submitRegister()">회원가입</button>
-</form>
-
-<p id="result" style="margin-top:16px; font-weight:bold;"></p>
-
-<script>
-function submitRegister() {
-    const form = document.getElementById('registerForm');
-    const formData = new FormData(form);
-
-    fetch("/register_process", {
-        method: "POST",
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        const p = document.getElementById("result");
-        p.textContent = data.message || (data.success ? "성공" : "실패");
-        p.style.color = data.success ? "green" : "red";
-    })
-    .catch(err => {
-        document.getElementById("result").textContent = "요청 오류: " + err;
-    });
-}
-</script>
-
-
+</body>
+</html>

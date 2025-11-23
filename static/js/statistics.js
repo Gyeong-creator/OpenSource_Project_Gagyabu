@@ -323,7 +323,46 @@ console.log('statistics.js loaded');
 		await updateWeeklySection(); 
 		updateBalanceCard();
 		updateCategoryPills();
+		loadSpendingAdvice();
 	}
+
+	// ---------- (신규) 지출 조언 API 호출 ----------
+    async function loadSpendingAdvice() {
+        try {
+            const res = await fetch('/api/stats/spending-advice');
+            if (!res.ok) return; // 에러 시 조용히 실패
+
+            const data = await res.json();
+
+            // 1. '조언' 메시지가 있는지 확인
+            if (data.advice) {
+                // 2. 메시지를 HTML에 삽입
+                document.getElementById('advice-message').textContent = data.advice;
+                // 3. 숨겨둔 카드를 보여주기
+                document.getElementById('advice-card').style.display = 'block';
+            } else {
+                // 조언이 없으면 카드를 숨김
+                document.getElementById('advice-card').style.display = 'none';
+            }
+        } catch (e) {
+            console.error('Error loading spending advice:', e);
+        }
+    }
+
+    // ---------- 초기화 ----------
+    async function init() {
+        bindTabs();
+        renderBalance();
+        
+        // (신규) '지출 조언' 함수를 맨 처음에 호출
+        loadSpendingAdvice(); 
+        
+        await updateMonthlyTotalSection();  
+        await updateMonthlySpendSection();  
+        await updateWeeklySection(); 
+        updateBalanceCard();
+        updateCategoryPills();
+    }
 
 	if (document.readyState === 'loading')
 		document.addEventListener('DOMContentLoaded', init);
