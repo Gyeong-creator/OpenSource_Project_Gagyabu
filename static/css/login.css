@@ -87,3 +87,9 @@
 .btn:hover {
     background: #0056b3;
 }
+
+.login-subtext {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #666;
+}
