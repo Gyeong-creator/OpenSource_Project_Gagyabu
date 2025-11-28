@@ -160,7 +160,7 @@ def get_transactions_by_date():
             item['date'] = item['date'].isoformat()
 
     return jsonify({'transactions': transactions_list})
-
+# 지금 /add 이거 수정해야됨////////////////////////////
 @app.route('/add', methods=['POST'])
 def add_transaction():
     user_id = session.get('id')
@@ -173,7 +173,8 @@ def add_transaction():
                 data.get('type'),
                 data.get('desc'),
                 data.get('amount'),
-                category=None 
+                category=data.get('category'),
+                pay=data.get('payment_method')
             )
             # 갱신된 목록 반환
             latest_transactions = ledger_db.select_ledger_by_user(user_id)
@@ -215,13 +216,22 @@ def edit_transaction():
         new_type = data.get('type')
         new_desc = data.get('desc')
         new_amount = data.get('amount')
+        new_category = data.get('category')
+        new_payment = data.get('payment_method')
 
         if not all([transaction_id, new_date, new_type, new_desc, new_amount is not None]):
              return jsonify({'error': '모든 값이 필요합니다.'}), 400
 
         try:
             ledger_db.update_transaction(
-                transaction_id, user_id, new_date, new_type, new_desc, new_amount
+                transaction_id, 
+                user_id, 
+                new_date, 
+                new_type, 
+                new_desc, 
+                new_amount,
+                new_category,
+                new_payment
             )
             return jsonify({'success': True})
         except Exception as e:
