@@ -173,7 +173,29 @@ th,
 td {
     padding: 10px;
     border-bottom: 1px solid #ccc;
+    white-space: nowrap; 
 }
+
+/* th 폰트 크기는 그대로 유지합니다. */
+th {
+    font-size: var(--font-size-sm); 
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    font-size: var(--font-size-base);
+    /*테이블 레이아웃을 고정하여 컬럼 너비가 정확하게 유지되도록 합니다.*/
+    table-layout: fixed; 
+}
+
+/* 컬럼별 너비 지정*/
+#transaction-list table th:nth-child(3), /* 카테고리 헤더 */
+#transaction-list table td:nth-child(3) {
+    width: 15%; /* 너비를 넉넉하게 설정 */
+}
+
 th {
     font-size: var(--font-size-sm); /* (신규) 글꼴 크기 적용 */
 }
