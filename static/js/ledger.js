@@ -79,12 +79,20 @@ function updateFormState() {
 }
 
 /**
- * 달력을 생성하고 화면에 렌더링하는 함수
+ * (수정) 달력을 생성하고 화면에 렌더링하는 함수
  */
 function renderCalendar(date) {
     calendarDiv.innerHTML = '';
     const year = date.getFullYear();
     const month = date.getMonth();
+
+    // --- (신규) '오늘' 날짜 정보 가져오기 ---
+    const today = new Date();
+    const todayDate = today.getDate();
+    const todayMonth = today.getMonth();
+    const todayYear = today.getFullYear();
+    // --- (신규) ---
+
     currentMonthTitle.textContent = `${year}년 ${month + 1}월`;
     const firstDayOfMonth = new Date(year, month, 1);
     const lastDayOfMonth = new Date(year, month + 1, 0);
@@ -100,13 +108,29 @@ function renderCalendar(date) {
         const day = document.createElement('div');
         day.classList.add('day');
         day.textContent = i;
+
+        // --- (신규) '오늘' 및 '선택' 날짜 확인 ---
+        const monthStr = String(month + 1).padStart(2, '0');
+        const dayStr = String(i).padStart(2, '0');
+        const currentDayStr = `${year}-${monthStr}-${dayStr}`;
+
+        // 1. '오늘' 날짜 확인
+        if (i === todayDate && month === todayMonth && year === todayYear) {
+            day.classList.add('today');
+        }
+        // 2. '선택된' 날짜 확인 (global 'selectedDate' 변수와 비교)
+        if (currentDayStr === selectedDate) {
+            day.classList.add('selected');
+        }
+        // --- (신규) ---
+
         day.onclick = () => selectDate(year, month, i);
         calendarDiv.appendChild(day);
     }
 }
 
 /**
- * (신규) 현재 날짜의 목록을 새로고침하는 헬퍼 함수
+ * 현재 날짜의 목록을 새로고침하는 헬퍼 함수
  */
 async function refreshCurrentList() {
     if (!selectedDate) return;
@@ -117,7 +141,7 @@ async function refreshCurrentList() {
 }
 
 /**
- * 날짜를 선택했을 때 호출되는 함수 (API 호출로 변경됨)
+ * (수정) 날짜를 선택했을 때 호출되는 함수
  */
 async function selectDate(year, month, day) {
     document.getElementById('input-container').classList.remove('centered-prompt');
@@ -125,12 +149,16 @@ async function selectDate(year, month, day) {
 
     const monthStr = String(month + 1).padStart(2, '0');
     const dayStr = String(day).padStart(2, '0');
-    selectedDate = `${year}-${monthStr}-${dayStr}`;
+    selectedDate = `${year}-${monthStr}-${dayStr}`; // ◀ 전역 변수 설정
+
+    // --- (신규) 날짜 클릭 시 달력을 새로고침하여 .selected 클래스 적용 ---
+    renderCalendar(currentDate); 
+    // --- (신규) ---
     
     inputTitle.textContent = `${selectedDate} 내역 입력`;
     form.style.display = 'flex';
 
-    // (!!!) 날짜를 클릭하면 해당 날짜의 API를 호출
+    // 날짜를 클릭하면 해당 날짜의 API를 호출
     try {
         const res = await fetch(`/transactions-by-date?date=${selectedDate}`);
         if (!res.ok) {
@@ -197,11 +225,11 @@ applyBtn.onclick = async () => {
         alert(error.message); 
     }
     
-    // (변경) 목록 새로고침
+    // 목록 새로고침
     await refreshCurrentList();
 };
 
-// (신규) '삭제', '수정', '저장', '취소' 버튼 클릭을 감지하는 이벤트 리스너
+// '삭제', '수정', '저장', '취소' 버튼 클릭을 감지하는 이벤트 리스너
 listDiv.addEventListener('click', async function(event) {
     const target = event.target;
     const tr = target.closest('tr'); // 버튼이 속한 행(tr)
@@ -228,7 +256,7 @@ listDiv.addEventListener('click', async function(event) {
         }
     }
 
-    // (신규) '취소' 버튼 클릭 시
+    // '취소' 버튼 클릭 시
     if (target.classList.contains('cancel-btn')) {
         toggleEditMode(tr, false); // '표시 모드'로 되돌리기
     }
@@ -369,6 +397,7 @@ async function handleSave(tr, transactionId) {
         alert(err.message);
     }
 
+    // 목록 새로고침
     await refreshCurrentList();
 }
 
@@ -396,7 +425,7 @@ async function handleDelete(transactionId) {
         alert(error.message); 
     }
     
-    // (변경) 목록 새로고침
+    // 목록 새로고침
     await refreshCurrentList();
 }
 

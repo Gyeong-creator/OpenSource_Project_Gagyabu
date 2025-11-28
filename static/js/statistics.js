@@ -50,6 +50,12 @@ console.log('statistics.js loaded');
 			const balanceCard = document.getElementById("balanceCard");
 			if (t.dataset.panel === "monthlyTotal") balanceCard.classList.remove("hidden");
 			else balanceCard.classList.add("hidden");
+
+			// 월간 지출 탭일 때만 카테고리 카드 보이기
+            if (categoryCard) {
+                if (t.dataset.panel === "monthlySpend") categoryCard.classList.remove("hidden");
+                else categoryCard.classList.add("hidden");
+            }
 		});
 		});
 	}
@@ -75,6 +81,56 @@ console.log('statistics.js loaded');
 		canvas._chartInstance = chart;
 	}
 	  
+		// ---------- 카테고리 도넛 차트 렌더 ----------
+		function renderCategoryPie(items) {
+			const canvas = document.getElementById('chartCategoryPie');
+			if (!canvas) return;
+	
+			const ctx = canvas.getContext('2d');
+			if (canvas._chartInstance) canvas._chartInstance.destroy();
+	
+			const labels = items.map(it => it.category);
+			const data   = items.map(it => it.amount); // or it.pct 써도 됨
+	
+			const chart = new Chart(ctx, {
+				type: 'doughnut',
+				data: {
+					labels,
+					datasets: [{
+						data,
+						borderWidth: 1
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { position: 'bottom' },
+						tooltip: {
+							callbacks: {
+								label: (ctx) => {
+									const label = ctx.label || '';
+									const value = ctx.parsed;
+									// items 배열에서 pct 찾아서 같이 보여주기
+									const item = items[ctx.dataIndex];
+									const pct = item && typeof item.pct === 'number'
+										? Math.round(item.pct)
+										: null;
+									if (pct !== null) {
+										return `${label}: ${won(value)} (${pct}%)`;
+									}
+									return `${label}: ${won(value)}`;
+								}
+							}
+						}
+					}
+				}
+			});
+	
+			canvas._chartInstance = chart;
+		}
+
+		
 	// ---------- 데이터 요청 ----------
 	async function fetchMonthlySpend(year, month) {
 		const res = await fetch(`/api/stats/monthly-spend?year=${year}&month=${month}`);
@@ -231,34 +287,63 @@ console.log('statistics.js loaded');
 		const m = now.getMonth() + 1;
 		
 		const wrap = document.getElementById('categoryBreak');
+		const msgEl = document.getElementById('topCategoryMsg');
 		if (!wrap) return;
 		wrap.innerHTML = '';
-	
+		if (msgEl) msgEl.textContent = '';
+
 		try {
-			const { items = [] } = await fetchMonthlyCats(y, m);
+			const { items = [], total = 0 } = await fetchMonthlyCats(y, m);
 		
-			if (!items.length) {
-			const span = document.createElement('span');
-			span.className = 'pill';
-			span.textContent = '지출 데이터 없음';
-			wrap.appendChild(span);
-			return;
+			if (!items.length || total <= 0) {
+				const span = document.createElement('span');
+				span.className = 'pill';
+				span.textContent = '지출 데이터 없음';
+				wrap.appendChild(span);
+				if (msgEl) msgEl.textContent = '이번 달 지출 데이터가 아직 없어요.';
+				// 그래프도 비우고 끝
+				renderCategoryPie([]);
+				return;
 			}
 		
+			// ✅ pill 렌더
 			items.forEach(({ category, pct }) => {
-			const pill = document.createElement('span');
-			pill.className = 'pill';
-			pill.textContent = `${category} ${Math.round(pct)}%`;
-			wrap.appendChild(pill);
+				const pill = document.createElement('span');
+				pill.className = 'pill';
+				pill.textContent = `${category} ${Math.round(pct)}%`;
+				wrap.appendChild(pill);
 			});
+
+			// ✅ 카테고리 도넛 차트 렌더
+			renderCategoryPie(items);
+
+			// ✅ 가장 지출이 많은 카테고리 찾기
+			const top = items.reduce((acc, cur) => {
+				if (!acc) return cur;
+				return (cur.amount || 0) > (acc.amount || 0) ? cur : acc;
+			}, null);
+
+			if (top && msgEl) {
+				const pct = typeof top.pct === 'number' ? Math.round(top.pct) : null;
+				if (pct !== null) {
+					msgEl.textContent = `이번 달 지출 중 ${top.category}가(이) ${pct}%로 가장 많아요!`;
+				} else {
+					// pct가 안 넘어오는 경우 대비
+					const ratio = total > 0 ? Math.round((top.amount / total) * 100) : 0;
+					msgEl.textContent = `이번 달 지출 중 ${top.category}가(이) ${ratio}%로 가장 많아요!`;
+				}
+			}
+
 		} catch (e) {
 			console.error(e);
 			const span = document.createElement('span');
 			span.className = 'pill';
 			span.textContent = '로드 실패';
 			wrap.appendChild(span);
+			if (msgEl) msgEl.textContent = '카테고리 데이터를 불러오지 못했어요.';
 		}
 	}
+
 	  
 	async function fetchWeekly(n = 10) {
 		const res = await fetch(`/api/stats/weekly?n=${n}`);
@@ -323,7 +408,46 @@ console.log('statistics.js loaded');
 		await updateWeeklySection(); 
 		updateBalanceCard();
 		updateCategoryPills();
+		loadSpendingAdvice();
 	}
+
+	// ---------- (신규) 지출 조언 API 호출 ----------
+    async function loadSpendingAdvice() {
+        try {
+            const res = await fetch('/api/stats/spending-advice');
+            if (!res.ok) return; // 에러 시 조용히 실패
+
+            const data = await res.json();
+
+            // 1. '조언' 메시지가 있는지 확인
+            if (data.advice) {
+                // 2. 메시지를 HTML에 삽입
+                document.getElementById('advice-message').textContent = data.advice;
+                // 3. 숨겨둔 카드를 보여주기
+                document.getElementById('advice-card').style.display = 'block';
+            } else {
+                // 조언이 없으면 카드를 숨김
+                document.getElementById('advice-card').style.display = 'none';
+            }
+        } catch (e) {
+            console.error('Error loading spending advice:', e);
+        }
+    }
+
+    // ---------- 초기화 ----------
+    async function init() {
+        bindTabs();
+        renderBalance();
+        
+        // (신규) '지출 조언' 함수를 맨 처음에 호출
+        loadSpendingAdvice(); 
+        
+        await updateMonthlyTotalSection();  
+        await updateMonthlySpendSection();  
+        await updateWeeklySection(); 
+        updateBalanceCard();
+        updateCategoryPills();
+    }
 
 	if (document.readyState === 'loading')
 		document.addEventListener('DOMContentLoaded', init);
