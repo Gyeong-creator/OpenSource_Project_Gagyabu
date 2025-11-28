@@ -261,13 +261,10 @@ def insert_transaction(user_id, date, type, desc, amount, category=None):
         # [주의] pay 컬럼이 있다면 INSERT 할 때도 pay 값을 넣어줘야 완벽합니다.
         # 일단은 기존 코드(pay 없음)를 유지하되, DB 기본값(Default)이나 NULL로 들어가게 둡니다.
         sql = """
-            INSERT INTO ledger (user_id, date, type, description, amount, category, pay)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO ledger (user_id, date, type, description, amount, category)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
-        # (DB 컬럼명이 'description'이므로, 'desc' 변수를 description 컬럼에 삽입)
-        
-        # (!!! 수정 !!!) 'type' 변수명 충돌을 피하기 위해 'transaction_type'으로 변경
-        cursor.execute(sql, (user_id, date, transaction_type, desc, amount, category, pay))
+        cursor.execute(sql, (user_id, date, type, desc, amount, category))
         db.commit()
     except Exception as e:
         if db: db.rollback()
@@ -292,8 +289,7 @@ def delete_transaction_by_id(transaction_id, user_id):
         if cursor: cursor.close()
         if db: db.close()
 
-def update_transaction(trans_id, user_id, date, type, desc, amount, category, pay):
-    """ (신규) ID와 일치하는 거래 내역을 수정합니다. """
+def update_transaction(trans_id, user_id, date, type, desc, amount):
     db = None
     cursor = None
     try:
@@ -301,19 +297,10 @@ def update_transaction(trans_id, user_id, date, type, desc, amount, category, pa
         cursor = db.cursor()
         sql = """
             UPDATE ledger 
-            SET 
-                date = %s, 
-                type = %s, 
-                description = %s,
-                amount = %s,
-                category = %s,
-                pay = %s
-            WHERE 
-                id = %s AND user_id = %s
+            SET date=%s, type=%s, description=%s, amount=%s 
+            WHERE id=%s AND user_id=%s
         """
-        
-        # (참고) insert와 순서가 다름 (id, user_id가 WHERE절로 감)
-        affected_rows = cursor.execute(sql, (date, type, desc, amount,category, pay, trans_id, user_id))
+        cursor.execute(sql, (date, type, desc, amount, trans_id, user_id))
         db.commit()
     except Exception as e:
         if db: db.rollback()
@@ -326,17 +313,8 @@ def select_transactions_by_date(user_id, date):
     db = None
     cursor = None
     try:
-        db = db_connector() # 기존 DB 연결 함수
-        
-        # 결과를 딕셔너리로 받기 위해 DictCursor 사용
-        cursor = db.cursor(pymysql.cursors.DictCursor) 
-        
-        sql = """
-            SELECT id, user_id, date, type, description, amount, category, pay 
-            FROM ledger 
-            WHERE user_id = %s AND date = %s
-            ORDER BY id ASC
-        """
+        db = db_connector()
+        cursor = db.cursor(pymysql.cursors.DictCursor) # [수정]
         
         # pay 컬럼도 같이 조회
         sql = "SELECT * FROM ledger WHERE user_id=%s AND date=%s ORDER BY id ASC"

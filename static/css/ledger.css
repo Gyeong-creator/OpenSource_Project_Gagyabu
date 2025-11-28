@@ -251,44 +251,39 @@ tr:hover .edit-btn {
     background-color: #f5f5f5;
 }
 
-/* 수정 모드 입력창 스타일 */
 .edit-field {
-    width: 100%;               /* 셀 너비에 딱 맞춤 */
-    box-sizing: border-box;    /* 테두리와 패딩을 너비에 포함 (중요!) */
-    padding: 4px 6px;          /* 너무 뚱뚱하지 않게 패딩 조절 */
-    font-size: 14px;           /* 글자 크기 통일 */
-    font-family: inherit;      /* 폰트 상속 */
-    border: 1px solid #ccc;    
-    border-radius: 4px;
-    margin: 0;                 /* 불필요한 여백 제거 */
-    background-color: #fff;    /* 배경색 지정 */
-    height: 30px;              /* 높이를 고정해서 위아래 덜컹거림 방지 */
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: var(--font-size-base); /* (수정) 글꼴 크기 적용 */
+    box-sizing: border-box;
 }
 
-/* 셀 내부 정렬 보정 */
-#transaction-list td {
-    vertical-align: middle; /* 입력창이 생겨도 수직 중앙 정렬 유지 */
-    height: 45px;           /* 행 높이를 미리 확보해서 커지는 것 방지 */
+.edit-description {
+    width: 150px; /* '내역' 칸의 너비 */
 }
 
-/* 버튼 칸(마지막 td) 줄바꿈 방지 */
+.edit-amount {
+    width: 100px; /* '금액' 칸의 너비*/
+}
+
 #transaction-list td:last-child {
     text-align: right;
     min-width: 120px;
-    white-space: nowrap;
+    white-space: nowrap; 
 }
 
-/* 비활성화된 버튼 스타일 (클릭 금지 표시) */
-button:disabled {
-    background-color: transparent; /* 배경 투명 */
-    color: #ccc;      /* 글자색 흐리게 */
-    cursor: not-allowed; /* 마우스 올리면 금지 표시 */
-    opacity: 0.5;     /* 전체적으로 흐리게 */
+/* 1. '오늘' 날짜 스타일 */
+.day.today {
+    background-color: #d8e2f2; /* 호버 색상과 동일 */
+    color: inherit;
+    font-weight: bold; /* 오늘 날짜는 굵게 표시 */
 }
 
-/* 원래 호버 효과 제거 (비활성화 상태일 때) */
-button:disabled:hover {
-    color: #ccc;
-    background-color: transparent;
-    transform: none;
+/* 2. '선택된' 날짜 스타일 */
+.day.selected {
+    background-color: #d8e2f2; /* 호버 색상과 동일 */
+    color: inherit;
+    /* 선택된 날짜는 파란색 테두리로 한 번 더 강조 (선택 사항) */
+    box-shadow: 0 0 0 2px var(--accent) inset; 
 }
