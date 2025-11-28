@@ -278,17 +278,35 @@ tr:hover .edit-btn {
     white-space: nowrap;
 }
 
+/* 1. '오늘' 날짜 스타일 */
+.day.today {
+    background-color: #d8e2f2; /* 호버 색상과 동일 */
+    color: inherit;
+    font-weight: bold; /* 오늘 날짜는 굵게 표시 */
+} /* <--- 1번 스타일 블록 닫기 */
+
+
 /* 비활성화된 버튼 스타일 (클릭 금지 표시) */
 button:disabled {
     background-color: transparent; /* 배경 투명 */
     color: #ccc;      /* 글자색 흐리게 */
     cursor: not-allowed; /* 마우스 올리면 금지 표시 */
     opacity: 0.5;     /* 전체적으로 흐리게 */
-}
+} /* <--- 2번 스타일 블록 닫기 */
+
+
+/* 2. '선택된' 날짜 스타일 */
+.day.selected {
+    background-color: #d8e2f2; /* 호버 색상과 동일 */
+    color: inherit;
+    /* 선택된 날짜는 파란색 테두리로 한 번 더 강조 (선택 사항) */
+    box-shadow: 0 0 0 2px var(--accent) inset; 
+} /* <--- 3번 스타일 블록 닫기 */
+
 
 /* 원래 호버 효과 제거 (비활성화 상태일 때) */
 button:disabled:hover {
     color: #ccc;
     background-color: transparent;
     transform: none;
-}
+} 
