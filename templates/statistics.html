@@ -51,11 +51,29 @@
             <div class="legend">
                 <span><span class="box primary"></span>이번달</span>
                 <span><span class="box grey"></span>지난달</span>
-        </div>
+            </div>
 
-        <div id="categoryBreak" class="pills"></div>
+        
+        </section>
+
+        <!-- 카테고리별 지출 카드 -->
+        <section class="card narrow hidden" id="categoryCard">
+            <div class="card-head">
+                <h3>카테고리별 지출</h3>
+                <div class="sub">이번 달 기준</div>
+            </div>
+
+            <div class="chart" style="max-height:260px; margin-top: 8px;">
+                <canvas id="chartCategoryPie"></canvas>
+            </div>
+
+            <p id="topCategoryMsg" class="muted small" style="font-weight:600; margin-top: 12px;"></p>
+
+            <div id="categoryBreak" class="pills"></div>
             <p class="muted small">카테고리 분류: 이번달 지출 비중(%)</p>
         </section>
+
+
 
         <!-- 주간 합계 -->
         <section class="card narrow panel hidden" id="weeklyTotal">
