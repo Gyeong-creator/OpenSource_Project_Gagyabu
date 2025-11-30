@@ -252,7 +252,7 @@ def select_recent_weeks(user_id, n_weeks):
 # INSERT, UPDATE, DELETE는 결과를 받아오는 게 아니라서 DictCursor가 필수는 아니지만,
 # 일관성을 위해 둬도 상관없고, 에러 발생 시 롤백 로직이 중요합니다.
 
-def insert_transaction(user_id, date, type, desc, amount, category=None):
+def insert_transaction(user_id, date, transaction_type, desc, amount, category, pay):
     db = None
     cursor = None
     try:
