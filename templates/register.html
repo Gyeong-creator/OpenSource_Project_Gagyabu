@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원가입</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
-</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    
+    </head>
 
-<body class="signup-body">
-    <div class="signup-container">
-        <div class="signup-logo">📝</div>
+<body class="login-body">
+    <div class="login-container">
+        <div class="logo">🔏</div> 
         <h2>회원가입</h2>
 
         <form id="signup-form">
@@ -35,7 +37,7 @@
             <button type="submit" class="btn" id="signup-btn">회원가입</button>
         </form>
 
-        <div class="signup-subtext">
+        <div class="login-subtext">
             이미 계정이 있으신가요?
             <a href="{{ url_for('login_view') }}">로그인 하기</a> 
         </div>
