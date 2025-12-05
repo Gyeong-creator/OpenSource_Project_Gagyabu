@@ -1,15 +1,14 @@
 /* ===================================================================
-   가계부 페이지 (ledger.html) 전용 스타일
+   가계부 페이지 전용 스타일
    =================================================================== */
 
-/* --- 페이지 상단 (헤더) --- */
+/* (수정) body 덮어쓰기 삭제 -> common.css 상속 */
 
-/* 우측 상단 'OOO님', '로그아웃' 링크 */
 .user-info {
     position: absolute;
     top: 30px;
     right: 40px;
-    font-size: 14px;
+    font-size: var(--font-size-base); /* (수정) 14px -> 변수 */
     font-weight: bold;
     color: black;
 }
@@ -23,15 +22,13 @@
 .user-info a:hover {
     text-decoration: underline;
 }
-
-/* 좌측 상단 '통계 페이지' 링크 */
 .stats-link {
     position: absolute;
     top: 30px;
     left: 40px;
     color: black;
     text-decoration: none;
-    font-size: 18px;
+    font-size: var(--font-size-xl); /* (수정) 18px -> 변수 */
     font-weight: bold;
 }
 .stats-link:hover {
@@ -39,9 +36,6 @@
 }
 
 
-/* --- 3단 카드 레이아웃 (흰색 상자) --- */
-
-/* 2. 달력 상자 */
 .container {
     max-width: 760px;
     margin: 15px auto 0 auto;
@@ -50,7 +44,6 @@
     padding: 30px 40px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
-/* 1. 입출금 입력 상자 */
 #input-container {
     max-width: 760px;
     margin: 70px auto 0 auto;
@@ -60,7 +53,6 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     text-align: center;
 }
-/* 3. 거래 내역 상자 (평소에는 숨겨짐) */
 #transaction-list {
     display: none;
     max-width: 760px;
@@ -71,25 +63,19 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-
-/* --- 1. 입출금 입력 상자 (내부) --- */
-
-/* '달력에서 날짜를 클릭하세요' 텍스트 */
 #input-title {
     margin: 0 0 15px 0;
-    color: var(--text);
-    font-size: 18px;
-    font-weight: 600;
+    color: black;
+    font-size: var(--font-size-xl); /* (수정) 1.1em -> 18px 변수 */
+    font-weight: 800; /* (수정) 500 -> 800 (통계와 통일) */
 }
-/* '적용' 폼 스타일 */
 #input-container form {
     display: flex;
-    gap: 10px;
+    gap: 5px;
     flex-wrap: wrap;
     justify-content: center;
     margin-top: 0;
 }
-/* 초기 안내 문구 중앙 정렬을 위한 스타일 */
 #input-container.centered-prompt {
     display: flex;
     flex-direction: column;
@@ -100,10 +86,12 @@
 #input-container.centered-prompt #input-title {
     margin-bottom: 0;
 }
-
-/* --- 2. 달력 상자 (내부) --- */
-
-/* 월 이동 네비게이터 ( < 2025년 10월 > ) */
+#amount{
+    max-width: 120px;
+}
+#desc{
+    max-width: 170px;
+}
 .month-navigator {
     display: flex;
     justify-content: center;
@@ -111,21 +99,19 @@
     gap: 85px;
     margin-bottom: 20px;
 }
-/* '2025년 10월' 텍스트 */
 .month-navigator h3 {
     margin: 0;
     color: #333;
     width: 150px;
     text-align: center;
-    font-size: 1.4em;
+    font-size: var(--font-size-h2); /* (수정) 1.4em -> 22px 변수 */
 }
-/* '<' '>' 화살표 버튼 */
 .month-navigator button {
     background: none;
     border: none;
     cursor: pointer;
     color: #333;
-    font-size: 26px;
+    font-size: 26px; /* (고유 크기 유지) */
     font-weight: bold;
     padding: 0 10px;
 }
@@ -133,51 +119,43 @@
     background-color: transparent;
     color: #888;
 }
-
-/* 달력 그리드 */
 .calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 5px;
     text-align: center;
 }
-/* 날짜(일) 칸 */
 .day {
     padding: 15px;
     background: #f5f5f5;
     border-radius: 10px;
     cursor: pointer;
     transition: 0.2s;
+    font-size: var(--font-size-base); /* (신규) 글꼴 크기 적용 */
 }
-/* 비어있는 날짜 칸 */
 .day.empty {
     background: none;
     cursor: default;
 }
-/* 날짜에 마우스 올렸을 때 */
-.day:not(.empty):hover {
+.day:not(.empty):not(.selected):hover {
     background: #d8e2f2;
 }
-
-/* --- 3. 거래 내역 상자 (내부) --- */
-
 #transaction-list > h3 {
     margin-top: 0;
+    font-size: var(--font-size-xl); /* (신규) 글꼴 크기 적용 (h3) */
+    font-weight: 800;
 }
 #transaction-list > table {
     margin-bottom: 0;
 }
 
-/* --- 공용 폼 요소 (입력창, 버튼 등) --- */
-
-/* '입금/출금', '내역', '금액' 입력창 */
 input,
 select {
     padding: 8px 10px;
     border: 1px solid #ccc;
     border-radius: 10px;
+    font-size: var(--font-size-base); /* (신규) 글꼴 크기 적용 */
 }
-/* '적용' 버튼 (파란색) */
 button {
     background-color: #5a67f2;
     color: white;
@@ -185,66 +163,89 @@ button {
     border-radius: 20px;
     padding: 10px 20px;
     cursor: pointer;
+    font-size: var(--font-size-base); /* (신규) 글꼴 크기 적용 */
 }
 button:hover {
     background-color: #4654e1;
 }
 
-/* --- 거래 내역 테이블 --- */
-
 table {
     width: 100%;
     border-collapse: collapse;
     text-align: center;
+    font-size: var(--font-size-base); /* (신규) 글꼴 크기 적용 */
 }
 th,
 td {
     padding: 10px;
     border-bottom: 1px solid #ccc;
+    white-space: nowrap; 
 }
-/* '입금' 금액(td) 붉은색 표시 */
+
+/* th 폰트 크기는 그대로 유지합니다. */
+th {
+    font-size: var(--font-size-sm); 
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    font-size: var(--font-size-base);
+    /*테이블 레이아웃을 고정하여 컬럼 너비가 정확하게 유지되도록 합니다.*/
+    table-layout: fixed; 
+}
+
+/* 컬럼별 너비 지정*/
+#transaction-list table th:nth-child(3), /* 카테고리 헤더 */
+#transaction-list table td:nth-child(3) {
+    width: 15%; /* 너비를 넉넉하게 설정 */
+}
+
+th {
+    font-size: var(--font-size-sm); /* (신규) 글꼴 크기 적용 */
+}
 td.deposit {
     color: #d93025;
     font-weight: 500;
 }
-
-/* 'X' 삭제 버튼 (평소 숨김) */
 .delete-btn {
     background: none;
     border: none;
     color: #aaa;
     cursor: pointer;
-    font-size: 1.4em;
+    font-size: 1.4em; /* (고유 크기 유지) */
     font-weight: 300;
     padding: 0 5px;
     line-height: 1;
-    opacity: 0; /* 평소 숨김 */
+    opacity: 0;
     transition: opacity 0.2s, color 0.2s;
 }
 .delete-btn:hover {
     color: #333;
     background-color: transparent;
 }
-/* 행(tr)에 마우스 올리면 삭제 버튼 보임 */
 tr:hover .delete-btn {
     opacity: 1;
 }
-
-/* '수정' 버튼 (연필 아이콘, 평소 숨김) */
+#transaction-list td:last-child {
+    text-align: right;
+    white-space: nowrap;
+    min-width: 120px;
+}
 .edit-btn {
     background: none;
     border: none;
     color: #aaa;
     cursor: pointer;
-    font-size: 1.2em;
+    font-size: 1.2em; /* (고유 크기 유지) */
     font-weight: 300;
     padding: 0 5px;
     line-height: 1;
-    opacity: 0; /* 평소 숨김 */
+    opacity: 0;
     transition: opacity 0.2s, color 0.2s;
     margin-right: 5px;
 }
-/* 행(tr)에 마우스 올리면 수정 버튼 보임 */
 tr:hover .edit-btn {
     opacity: 1;
 }
@@ -252,29 +253,25 @@ tr:hover .edit-btn {
     color: #333;
     background-color: transparent;
 }
-
-/* '저장' 버튼 (수정 모드) */
 .save-btn {
     background-color: #5a67f2;
     color: white;
     border: none;
     border-radius: 10px;
     padding: 3px 8px;
-    font-size: 0.8em;
+    font-size: var(--font-size-sm); /* (수정) 0.8em -> 변수 */
     cursor: pointer;
 }
 .save-btn:hover {
     background-color: #4654e1;
 }
-
-/* '취소' 버튼 (수정 모드) */
 .cancel-btn {
     background-color: #ffffff;
     color: #555;
     border: 1px solid #ccc;
     border-radius: 10px;
     padding: 3px 8px;
-    font-size: 0.8em;
+    font-size: var(--font-size-sm); /* (수정) 0.8em -> 변수 */
     cursor: pointer;
     margin-left: 4px;
 }
@@ -282,21 +279,62 @@ tr:hover .edit-btn {
     background-color: #f5f5f5;
 }
 
-/* 수정 모드에서 나타나는 입력 필드 */
+/* 수정 모드 입력창 스타일 */
 .edit-field {
-    padding: 5px 10px; 
-    font-size: var(--font-size-base);
-    font-family: var(--font-family);
-    border: 1px solid #ccc;
-    border-radius: 10px; 
-    width: 95%; 
-    min-width: 80px; 
-    box-sizing: border-box;
+    width: 100%;               /* 셀 너비에 딱 맞춤 */
+    box-sizing: border-box;    /* 테두리와 패딩을 너비에 포함 (중요!) */
+    padding: 4px 6px;          /* 너무 뚱뚱하지 않게 패딩 조절 */
+    font-size: 14px;           /* 글자 크기 통일 */
+    font-family: inherit;      /* 폰트 상속 */
+    border: 1px solid #ccc;    
+    border-radius: 4px;
+    margin: 0;                 /* 불필요한 여백 제거 */
+    background-color: #fff;    /* 배경색 지정 */
+    height: 30px;              /* 높이를 고정해서 위아래 덜컹거림 방지 */
 }
 
-/* 마지막 '버튼' 칸 스타일 */
+/* 셀 내부 정렬 보정 */
+#transaction-list td {
+    vertical-align: middle; /* 입력창이 생겨도 수직 중앙 정렬 유지 */
+    height: 45px;           /* 행 높이를 미리 확보해서 커지는 것 방지 */
+}
+
+/* 버튼 칸(마지막 td) 줄바꿈 방지 */
 #transaction-list td:last-child {
     text-align: right;
     min-width: 120px;
     white-space: nowrap;
 }
+
+/* 1. '오늘' 날짜 스타일 */
+.day.today {
+    background-color: #d8e2f2; /* 호버 색상과 동일 */
+    color: inherit;
+    font-weight: bold; /* 오늘 날짜는 굵게 표시 */
+} /* <--- 1번 스타일 블록 닫기 */
+
+
+/* 비활성화된 버튼 스타일 (클릭 금지 표시) */
+button:disabled {
+    background-color: transparent; /* 배경 투명 */
+    color: #ccc;      /* 글자색 흐리게 */
+    cursor: not-allowed; /* 마우스 올리면 금지 표시 */
+    opacity: 0.5;     /* 전체적으로 흐리게 */
+} /* <--- 2번 스타일 블록 닫기 */
+
+
+/* 2. '선택된' 날짜 스타일 */
+.day.selected {
+    background-color: #d8e2f2; /* 호버 색상과 동일 */
+    color: inherit;
+    /* 선택된 날짜는 파란색 테두리로 한 번 더 강조 (선택 사항) */
+    box-shadow: 0 0 0 2px var(--accent) inset; 
+} /* <--- 3번 스타일 블록 닫기 */
+
+
+/* 원래 호버 효과 제거 (비활성화 상태일 때) */
+button:disabled:hover {
+    color: #ccc;
+    background-color: transparent;
+    transform: none;
+} 

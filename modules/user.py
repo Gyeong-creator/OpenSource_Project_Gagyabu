@@ -48,3 +48,46 @@ def select_user_info(id, pw):
     finally:
         cur.close()
         db.close()
+
+# -------------------------------------------------------------
+# [신규] 회원가입 관련 함수
+# -------------------------------------------------------------
+def check_user_exists(id):
+    """
+    ID 중복 여부를 확인합니다.
+    """
+    db = db_connector()
+    cur = db.cursor()
+    try:
+        cur.execute("SELECT id FROM user WHERE id=%s", (id,))
+        return cur.fetchone() is not None
+    finally:
+        cur.close()
+        db.close()
+
+def create_user(user_name, id, password):
+    """
+    새로운 사용자를 DB에 등록합니다.
+    (보안 위험: 비밀번호를 평문으로 저장합니다. 해시 함수를 사용해야 합니다.)
+
+    Returns:
+        tuple: (성공 여부 bool, 이유 str)
+    """
+    if check_user_exists(id):
+        return False, "duplicate_id"
+
+    db = db_connector()
+    cur = db.cursor()
+    try:
+        # SQL Injection 방지를 위해 %s 플레이스홀더를 사용합니다.
+        sql = "INSERT INTO user (user_name, id, password) VALUES (%s, %s, %s)"
+        cur.execute(sql, (user_name, id, password))
+        db.commit()
+        return True, ""
+    except Exception as e:
+        print(f"[DB INSERT ERROR] {type(e).__name__}: {e}")
+        db.rollback()
+        return False, "db_error"
+    finally:
+        cur.close()
+        db.close()

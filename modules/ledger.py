@@ -1,68 +1,48 @@
 import pymysql
-from .user import db_connector # user.py에서 db_connector를 가져옴
+from .user import db_connector 
 from datetime import timedelta, date
 
+# ---------------------------------------------------------
+# [수정] 모든 함수에서 cursor() 대신 cursor(pymysql.cursors.DictCursor) 사용
+# ---------------------------------------------------------
+
 def select_ledger_by_user(user_id):
-    """
-    특정 유저의 모든 거래 내역을 조회합니다. (가계부 메인 목록용)
-
-    Args:
-        user_id (int): 사용자의 고유 ID
-
-    Returns:
-        list: 딕셔너리로 구성된 거래 내역 리스트
-    """
+    """ 가계부 메인 목록 조회 """
     db = None
     cursor = None
-    
     try:
         db = db_connector()
-        # db_connector에서 DictCursor를 기본으로 반환한다고 가정
-        cursor = db.cursor() 
+        # [수정] 딕셔너리 커서 사용
+        cursor = db.cursor(pymysql.cursors.DictCursor) 
     
         sql = """
-            SELECT id, user_id, date, type, description, amount, category 
+            SELECT id, user_id, date, type, description, amount, category, pay
             FROM ledger 
             WHERE user_id = %s 
             ORDER BY date DESC
         """
-        
         cursor.execute(sql, (user_id,))
         results = cursor.fetchall()
         return results
 
     except Exception as e:
-        print(f"[SELECT LEDGER ERROR] {type(e).__name__}: {e}")
+        print(f"[SELECT LEDGER ERROR] {e}")
         return []
 
     finally:
-        if cursor:
-            cursor.close()
-        if db:
-            db.close()
+        if cursor: cursor.close()
+        if db: db.close()
 
 # --- 통계 함수 ---
 
 def select_month_ledger_by_user(user_id, year, month, days, start, end):
-    """
-    (통계) 해당 월의 일별 누적 지출 합계를 계산합니다.
-
-    Args:
-        user_id (int): 사용자 ID
-        year (int): 해당 연도
-        month (int): 해당 월
-        days (int): 해당 월의 총 일수
-        start (str): 시작 날짜 (YYYY-MM-DD)
-        end (str): 종료 날짜 (YYYY-MM-DD)
-
-    Returns:
-        dict: 'labels' (일자)와 'thisMonth' (누적 지출) 데이터
-    """
+    """ (월간 합계) 일별 누적 지출 """
     db = None
     cur = None
     try:
         db = db_connector()
-        cur = db.cursor()
+        cur = db.cursor(pymysql.cursors.DictCursor) # [수정]
+
         sql = """
             SELECT DATE(date) AS d,
                    SUM(CASE WHEN type='출금' THEN amount ELSE 0 END) AS spend
@@ -90,20 +70,14 @@ def select_month_ledger_by_user(user_id, year, month, days, start, end):
 
 
 def select_month_daily_spend_income(user_id, start, end, year, month, days):
-    """
-    (통계) 해당 월의 일별 누적 수입/지출 및 결제수단별 누적 지출을 계산합니다.
-
-    Args:
-        (다수): user_id, 시작/종료일, 연/월/일 정보
-
-    Returns:
-        dict: 일별 누적 데이터 및 월간 총계 데이터
+    """ 
+    (통계 상세) 수입/지출 및 결제수단(pay)별 통계 
     """
     db = None
     cur = None
     try:
         db = db_connector()
-        cur = db.cursor()
+        cur = db.cursor(pymysql.cursors.DictCursor) # [수정]
 
         sql = """
             SELECT DATE(date) AS d,
@@ -120,7 +94,7 @@ def select_month_daily_spend_income(user_id, start, end, year, month, days):
         cur.execute(sql, (user_id, start, end))
         rows = cur.fetchall()
 
-        # 날짜별 합계를 맵으로 구성
+        # [수정]
         income_by_day   = {}
         spend_by_day    = {}
         card_by_day     = {}
@@ -134,7 +108,6 @@ def select_month_daily_spend_income(user_id, start, end, year, month, days):
             transfer_by_day[d] = int(r['transfer'] or 0)
             other_by_day[d]    = int(r['other']    or 0)
 
-        # 1일~말일까지 누적 생성
         labels       = [f"{i}일" for i in range(1, days+1)]
         cumIncome    = []
         cumSpend     = []
@@ -170,28 +143,21 @@ def select_month_daily_spend_income(user_id, start, end, year, month, days):
             'totalTransfer': run_tr,
             'totalOther':  run_oth,
         }
+    except Exception as e:
+        print(f"[STATS DETAIL ERROR] {e}") # 에러 로그 확인용
+        return {}
     finally:
         if cur: cur.close()
         if db: db.close()
 
 
 def select_month_category_spend(user_id, start, end):
-    """
-    (통계) 해당 월의 카테고리별 지출 합계와 비중을 계산합니다.
-
-    Args:
-        user_id (int): 사용자 ID
-        start (str): 시작 날짜 (YYYY-MM-DD)
-        end (str): 종료 날짜 (YYYY-MM-DD)
-
-    Returns:
-        dict: 'total' (총 지출) 및 'items' (카테고리별 상세 리스트)
-    """
+    """ (카테고리 통계) """
     db = None
     cur = None
     try:
         db = db_connector()
-        cur = db.cursor()
+        cur = db.cursor(pymysql.cursors.DictCursor) # [수정]
 
         sql = """
             SELECT
@@ -241,33 +207,24 @@ def select_recent_weeks(user_id, n_weeks: int, end_date: date | None = None):
     db = cur = None
     try:
         db = db_connector()
-        cur = db.cursor()
+        cur = db.cursor(pymysql.cursors.DictCursor) # [수정]
 
         sql = """
         WITH RECURSIVE seq(i) AS (
-            SELECT 0
-            UNION ALL
-            SELECT i + 1 FROM seq WHERE i + 1 < %s
+            SELECT 0 UNION ALL SELECT i + 1 FROM seq WHERE i + 1 < %s
         ),
         base AS (
             SELECT DATE_SUB(%s, INTERVAL WEEKDAY(%s) DAY) AS monday_this_week
         ),
         weeks AS (
             SELECT DATE_SUB(b.monday_this_week, INTERVAL s.i WEEK) AS week_start
-            FROM base b
-            JOIN seq  s
+            FROM base b JOIN seq s
         ),
         agg AS (
             SELECT
                 w.week_start,
-                COALESCE(SUM(CASE
-                    WHEN LOWER(TRIM(l.type)) IN ('입금','수입')
-                    THEN CAST(REPLACE(l.amount, ',', '') AS SIGNED)
-                    ELSE 0 END), 0) AS income,
-                COALESCE(SUM(CASE
-                    WHEN LOWER(TRIM(l.type)) IN ('출금','지출')
-                    THEN CAST(REPLACE(l.amount, ',', '') AS SIGNED)
-                    ELSE 0 END), 0) AS spend
+                COALESCE(SUM(CASE WHEN l.type='입금' THEN l.amount ELSE 0 END), 0) AS income,
+                COALESCE(SUM(CASE WHEN l.type='출금' THEN l.amount ELSE 0 END), 0) AS spend
             FROM weeks w
             LEFT JOIN ledger l
               ON l.user_id = %s
@@ -290,192 +247,108 @@ def select_recent_weeks(user_id, n_weeks: int, end_date: date | None = None):
         net    = [int(r['net'] or 0) for r in rows]
         return {"labels": labels, "net": net}
 
+    except Exception as e:
+        print(f"[STATS WEEKLY ERROR] {e}")
+        return {"labels": [], "net": []}
     finally:
         if cur: cur.close()
         if db: db.close()
 
 
-def select_weekly_spend(user_id: int, end_date: date, n_weeks: int = 10):
-    """
-    (통계) 특정 날짜 기준 최근 n주간의 주별 총 지출을 계산합니다.
+# --- CRUD 함수 ---
+# INSERT, UPDATE, DELETE는 결과를 받아오는 게 아니라서 DictCursor가 필수는 아니지만,
+# 일관성을 위해 둬도 상관없고, 에러 발생 시 롤백 로직이 중요합니다.
 
-    Args:
-        user_id (int): 사용자 ID
-        end_date (date): 기준 종료 날짜
-        n_weeks (int): 조회할 주(week)의 수
-
-    Returns:
-        dict: 'labels' (주차) 및 'totals' (주별 총 지출) 데이터
-    """
-    db = None
-    cur = None
-    try:
-        db = db_connector()
-        cur = db.cursor()
-
-        cur.execute("SELECT YEARWEEK(%s, 6) AS yw_end", (end_date,))
-        yw_end = int(cur.fetchone()['yw_end'])
-
-        sql = """
-            SELECT
-              YEARWEEK(date, 6) AS yw,
-              MIN(DATE_SUB(date, INTERVAL WEEKDAY(date) DAY)) AS week_start,
-              SUM(
-                CASE WHEN type = '출금'
-                     THEN CAST(REPLACE(amount, ',', '') AS SIGNED)
-                     ELSE 0
-                END
-              ) AS spend
-            FROM ledger
-            WHERE user_id = %s
-              AND YEARWEEK(date, 6) BETWEEN %s - %s + 1 AND %s
-            GROUP BY yw
-            ORDER BY yw
-        """
-        cur.execute(sql, (user_id, yw_end, n_weeks, yw_end))
-        rows = cur.fetchall()
-
-        spend_by_yw = { int(r['yw']): int(r['spend'] or 0) for r in rows }
-        start_by_yw = { int(r['yw']): r['week_start'] for r in rows }
-
-        labels, totals = [], []
-        first_yw = yw_end - (n_weeks - 1)
-        for k in range(first_yw, yw_end + 1):
-            totals.append(spend_by_yw.get(k, 0))
-            wk = start_by_yw.get(k)
-            labels.append(
-                f"{wk.month}/{str(wk.day).zfill(2)}주" if wk else f"{str(k)[-2:]}주차"
-            )
-
-        return {'labels': labels, 'totals': totals}
-
-    finally:
-        if cur: cur.close()
-        if db: db.close()
-
-# --- 가계부 CRUD 함수 ---
-
-def insert_transaction(user_id, date, type, desc, amount, category=None):
-    """
-    (추가) 새로운 거래 내역을 DB에 추가합니다.
-    (app.py의 /add 에서 호출됨)
-    """
+def insert_transaction(user_id, date, transaction_type, desc, amount, category, pay):
     db = None
     cursor = None
     try:
         db = db_connector()
         cursor = db.cursor()
+        # [주의] pay 컬럼이 있다면 INSERT 할 때도 pay 값을 넣어줘야 완벽합니다.
+        # 일단은 기존 코드(pay 없음)를 유지하되, DB 기본값(Default)이나 NULL로 들어가게 둡니다.
         sql = """
-            INSERT INTO ledger (user_id, date, type, description, amount, category)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO ledger (user_id, date, type, description, amount, category, pay)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(sql, (user_id, date, type, desc, amount, category))
+        # (DB 컬럼명이 'description'이므로, 'desc' 변수를 description 컬럼에 삽입)
+        
+        cursor.execute(sql, (user_id, date, type, desc, amount, category, pay))
         db.commit()
     except Exception as e:
-        if db:
-            db.rollback()
-        print(f"[INSERT LEDGER ERROR] {e}") # (type() 충돌을 피해 e만 출력)
-        raise # 오류를 app.py로 전달
+        if db: db.rollback()
+        raise e
     finally:
-        if cursor:
-            cursor.close()
-        if db:
-            db.close()
+        if cursor: cursor.close()
+        if db: db.close()
 
 def delete_transaction_by_id(transaction_id, user_id):
-    """
-    (삭제) 특정 거래 내역을 DB에서 삭제합니다.
-    (app.py의 /delete 에서 호출됨)
-    """
     db = None
     cursor = None
     try:
         db = db_connector()
         cursor = db.cursor()
         sql = "DELETE FROM ledger WHERE id = %s AND user_id = %s"
-        affected_rows = cursor.execute(sql, (transaction_id, user_id))
+        cursor.execute(sql, (transaction_id, user_id))
         db.commit()
-        
-        if affected_rows == 0:
-            raise Exception("삭제 권한이 없거나 존재하지 않는 내역입니다.")
     except Exception as e:
-        if db:
-            db.rollback()
-        print(f"[DELETE LEDGER ERROR] {type(e).__name__}: {e}")
-        raise
+        if db: db.rollback()
+        raise e
     finally:
-        if cursor:
-            cursor.close()
-        if db:
-            db.close()
+        if cursor: cursor.close()
+        if db: db.close()
 
-def update_transaction(trans_id, user_id, date, type, desc, amount):
-    """ 
-    (수정) ID와 일치하는 거래 내역을 수정합니다. 
-    (app.py의 /edit 에서 호출됨)
-    """
+def update_transaction(trans_id, user_id, date, type, desc, amount, category, pay):
+    """ (신규) ID와 일치하는 거래 내역을 수정합니다. """
     db = None
     cursor = None
     try:
-        db = db_connector() 
+        db = db_connector()
         cursor = db.cursor()
-        
         sql = """
             UPDATE ledger 
             SET 
                 date = %s, 
                 type = %s, 
                 description = %s,
-                amount = %s
+                amount = %s,
+                category = %s,
+                pay = %s
             WHERE 
                 id = %s AND user_id = %s
         """
         
-        affected_rows = cursor.execute(sql, (date, type, desc, amount, trans_id, user_id))
+        # (참고) insert와 순서가 다름 (id, user_id가 WHERE절로 감)
+        affected_rows = cursor.execute(sql, (date, type, desc, amount,category, pay, trans_id, user_id))
         db.commit()
-
-        if affected_rows == 0:
-            raise Exception("수정 권한이 없거나 존재하지 않는 내역입니다.")
-        
     except Exception as e:
-        if db:
-            db.rollback()
-        print(f"[UPDATE LEDGER ERROR] {e}") # (type() 충돌을 피해 e만 출력)
-        raise
+        if db: db.rollback()
+        raise e
     finally:
-        if cursor:
-            cursor.close()
-        if db:
-            db.close()
+        if cursor: cursor.close()
+        if db: db.close()
 
 def select_transactions_by_date(user_id, date):
-    """ 
-    (날짜별 조회) 특정 사용자의 특정 날짜의 거래 내역만 조회합니다. 
-    (app.py의 /transactions-by-date 에서 호출됨)
-    """
     db = None
     cursor = None
-    
     try:
-        db = db_connector()
+        db = db_connector() # 기존 DB 연결 함수
+        
+        # 결과를 딕셔너리로 받기 위해 DictCursor 사용
         cursor = db.cursor(pymysql.cursors.DictCursor) 
         
         sql = """
-            SELECT id, user_id, date, type, description, amount, category 
+            SELECT id, user_id, date, type, description, amount, category, pay 
             FROM ledger 
             WHERE user_id = %s AND date = %s
             ORDER BY id ASC
         """
         
         cursor.execute(sql, (user_id, date))
-        results = cursor.fetchall()
-        return results
-        
+        return cursor.fetchall()
     except Exception as e:
-        print(f"[SELECT BY DATE ERROR] {type(e).__name__}: {e}")
+        print(f"[SELECT BY DATE ERROR] {e}")
         return []
     finally:
-        if cursor:
-            cursor.close()
-        if db:
-            db.close()
+        if cursor: cursor.close()
+        if db: db.close()
