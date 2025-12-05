@@ -359,4 +359,15 @@ button:disabled:hover {
     background-color: #e0e5ff !important;
 }
 
+/* [오늘]이면서 [내역이 있는] 날짜 구분 */
+.day.today.has-transaction {
+    /* 1. 내역이 있다는 배경색은 유지 */
+    background-color: #eff1fd !important; 
 
+    /* 2. '오늘'임을 표시하기 위해 테두리 추가 (테마색) */
+    border: 2px solid #5a67f2 !important; 
+    
+    /* 3. 글씨를 조금 더 진하게 */
+    color: #5a67f2 !important;
+    font-weight: 900;
+}
