@@ -57,6 +57,8 @@ console.log('statistics.js loaded');
 
 	// ---------- Tabs ----------
 	function bindTabs() {
+		const categoryCard = document.getElementById("categoryCard");  // 🔥 추가
+
 		document.querySelectorAll('.tab').forEach(t => {
 		t.addEventListener('click', () => {
 			document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
