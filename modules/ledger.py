@@ -12,7 +12,6 @@ def select_ledger_by_user(user_id):
     cursor = None
     try:
         db = db_connector()
-        # [수정] 딕셔너리 커서 사용
         cursor = db.cursor(pymysql.cursors.DictCursor) 
     
         sql = """
@@ -41,7 +40,7 @@ def select_month_ledger_by_user(user_id, year, month, days, start, end):
     cur = None
     try:
         db = db_connector()
-        cur = db.cursor(pymysql.cursors.DictCursor) # [수정]
+        cur = db.cursor(pymysql.cursors.DictCursor)
 
         sql = """
             SELECT DATE(date) AS d,
@@ -77,7 +76,7 @@ def select_month_daily_spend_income(user_id, start, end, year, month, days):
     cur = None
     try:
         db = db_connector()
-        cur = db.cursor(pymysql.cursors.DictCursor) # [수정]
+        cur = db.cursor(pymysql.cursors.DictCursor)
 
         sql = """
             SELECT DATE(date) AS d,
@@ -94,7 +93,6 @@ def select_month_daily_spend_income(user_id, start, end, year, month, days):
         cur.execute(sql, (user_id, start, end))
         rows = cur.fetchall()
 
-        # [수정]
         income_by_day   = {}
         spend_by_day    = {}
         card_by_day     = {}
@@ -157,7 +155,7 @@ def select_month_category_spend(user_id, start, end):
     cur = None
     try:
         db = db_connector()
-        cur = db.cursor(pymysql.cursors.DictCursor) # [수정]
+        cur = db.cursor(pymysql.cursors.DictCursor)
 
         sql = """
             SELECT
@@ -207,7 +205,7 @@ def select_recent_weeks(user_id, n_weeks: int, end_date: date | None = None):
     db = cur = None
     try:
         db = db_connector()
-        cur = db.cursor(pymysql.cursors.DictCursor) # [수정]
+        cur = db.cursor(pymysql.cursors.DictCursor)
 
         sql = """
         WITH RECURSIVE seq(i) AS (
@@ -265,15 +263,12 @@ def insert_transaction(user_id, date, transaction_type, desc, amount, category, 
     try:
         db = db_connector()
         cursor = db.cursor()
-        # [주의] pay 컬럼이 있다면 INSERT 할 때도 pay 값을 넣어줘야 완벽합니다.
-        # 일단은 기존 코드(pay 없음)를 유지하되, DB 기본값(Default)이나 NULL로 들어가게 둡니다.
         sql = """
             INSERT INTO ledger (user_id, date, type, description, amount, category, pay)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        # (DB 컬럼명이 'description'이므로, 'desc' 변수를 description 컬럼에 삽입)
         
-        cursor.execute(sql, (user_id, date, type, desc, amount, category, pay))
+        cursor.execute(sql, (user_id, date, transaction_type, desc, amount, category, pay))
         db.commit()
     except Exception as e:
         if db: db.rollback()
