@@ -160,7 +160,20 @@ def get_transactions_by_date():
             item['date'] = item['date'].isoformat()
 
     return jsonify({'transactions': transactions_list})
-# 지금 /add 이거 수정해야됨////////////////////////////
+
+@app.route('/month-active-dates')
+def get_month_active_dates():
+    user_id = session.get('id')
+    year = request.args.get('year', type=int)
+    month = request.args.get('month', type=int)
+    
+    if not user_id or not year or not month:
+        return jsonify([])
+
+    # modules/ledger.py 안에 있는 함수를 ledger_db.함수명 으로 호출
+    active_dates = ledger_db.select_month_active_days(user_id, year, month)
+    return jsonify(active_dates)
+
 @app.route('/add', methods=['POST'])
 def add_transaction():
     user_id = session.get('id')
@@ -173,8 +186,7 @@ def add_transaction():
                 data.get('type'),
                 data.get('desc'),
                 data.get('amount'),
-                category=data.get('category'),
-                pay=data.get('payment_method')
+                category=None 
             )
             # 갱신된 목록 반환
             latest_transactions = ledger_db.select_ledger_by_user(user_id)
@@ -216,22 +228,13 @@ def edit_transaction():
         new_type = data.get('type')
         new_desc = data.get('desc')
         new_amount = data.get('amount')
-        new_category = data.get('category')
-        new_payment = data.get('payment_method')
 
         if not all([transaction_id, new_date, new_type, new_desc, new_amount is not None]):
              return jsonify({'error': '모든 값이 필요합니다.'}), 400
 
         try:
             ledger_db.update_transaction(
-                transaction_id, 
-                user_id, 
-                new_date, 
-                new_type, 
-                new_desc, 
-                new_amount,
-                new_category,
-                new_payment
+                transaction_id, user_id, new_date, new_type, new_desc, new_amount
             )
             return jsonify({'success': True})
         except Exception as e:
@@ -281,17 +284,59 @@ def stats_monthly_cats():
 @app.route('/api/stats/weekly')
 def stats_weekly():
     user_id = session.get('id')
-    n = int(request.args.get('n', 10))      # 한 번에 볼 주 수 (기본 10주)
-    offset = int(request.args.get('offset', 0))  # 0: 최근 10주, 1: 그 이전 10주, ...
-
-    # 오늘 기준으로 offset 주 만큼 과거를 "종료 주"로 삼음
-    today = date.today()
-    end_date = today - timedelta(weeks=offset)
-
-    data = ledger_db.select_recent_weeks(user_id, n_weeks=n, end_date=end_date)
+    n = int(request.args.get('n', 10))
+    data = ledger_db.select_recent_weeks(user_id, n)
     return jsonify(data)
 
+@app.route('/api/stats/spending-advice')
+def stats_spending_advice():
+    user_id = session.get('id')
+    try:
+        today = date.today()
+        this_month_start = today.replace(day=1)
+        this_month_days = monthrange(today.year, today.month)[1]
+        next_month_start = (this_month_start + timedelta(days=32)).replace(day=1)
+        
+        this_month_data = ledger_db.select_month_daily_spend_income(
+            user_id, this_month_start, next_month_start, 
+            today.year, today.month, this_month_days
+        )
+        
+        TMI = this_month_data.get('totalIncome', 0)
+        TMS = this_month_data.get('totalSpend', 0)
 
-# ====================== 8. 서버 실행 ======================
+        last_month_end = this_month_start
+        last_month_start = (last_month_end - timedelta(days=1)).replace(day=1)
+        last_month_year = last_month_start.year
+        last_month_month = last_month_start.month
+        last_month_days = monthrange(last_month_year, last_month_month)[1]
+
+        last_month_data = ledger_db.select_month_daily_spend_income(
+            user_id, last_month_start, last_month_end,
+            last_month_year, last_month_month, last_month_days
+        )
+        
+        LMI = last_month_data.get('totalIncome', 0)
+        LMS = last_month_data.get('totalSpend', 0)
+
+        last_month_budget = LMI - LMS 
+        total_allowable = last_month_budget + TMI 
+        
+        warning_message = None
+
+        if total_allowable > 0:
+            spending_ratio = TMS / total_allowable
+            if spending_ratio > 0.7:
+                warning_message = f"지출이 총 예산의 {spending_ratio*100:.0f}%에 도달했습니다! 지출에 유의하세요."
+        elif TMS > TMI:
+             warning_message = "이번 달 수입보다 지출이 더 많습니다! 지출 관리가 필요합니다."
+
+        return jsonify({'advice': warning_message})
+
+    except Exception as e:
+        print(f"[API ADVICE ERROR] {type(e).__name__}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ====================== 서버 실행 ======================
 if __name__ == "__main__":
     app.run(debug=True, port=8080)
