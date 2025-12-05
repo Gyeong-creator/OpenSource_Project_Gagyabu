@@ -203,3 +203,17 @@ svg {
     width: 100% !important;
     height: 100% !important;
 }
+
+.noBtn{
+    border: var(--muted) solid 1px;
+    border-radius: 5px;
+    margin-right: 5px;
+    background: none;
+    color: var(--muted);
+}
+.noBtn:hover{
+    cursor: pointer;
+}
+#afterOp1, #afterOp2, #afterOp3{
+    margin-left: 5px;
+}

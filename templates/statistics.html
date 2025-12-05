@@ -30,7 +30,7 @@
         <!-- 월간 합계 -->
         <section class="card narrow panel" id="monthlyTotal">
             <h3>이 달의 합계</h3>
-            <div class="sub">기간: <span id="rangeMonthly"></span></div>
+            <div class="sub">기간: <button class="noBtn" id="beforeOp1"><</button><span id="rangeMonthly"></span><button class="noBtn" id="afterOp1">></button></div>
             <div class="kpi">
                 <div class="big" id="mtSum">0원</div>
                 <div class="delta" id="mtDelta"></div>
@@ -42,7 +42,7 @@
         <!-- 월간 지출 (지난달과 합치기) -->
         <section class="card narrow panel hidden" id="monthlySpend">
             <h3>월간 지출 (지난달과 비교)</h3>
-            <div class="sub">기간: <span id="rangeMonthlySpend"></span></div>
+            <div class="sub">기간: <button class="noBtn" id="beforeOp2"><</button><span id="rangeMonthlySpend"></span><button class="noBtn" id="afterOp2">></button></div>
             <div class="kpi">
                 <div class="big" id="msSum">0원</div>
                 <div class="delta" id="msDelta">지난달보다 0원 더 쓰는 중</div>
@@ -78,7 +78,7 @@
         <!-- 주간 합계 -->
         <section class="card narrow panel hidden" id="weeklyTotal">
             <h3>주간 합계</h3>
-            <div class="sub">최근 10주</div>
+            <div class="sub"><button class="noBtn" id="beforeOp3"><</button>최근 10주<button class="noBtn" id="afterOp3">></button></div>
             <div class="kpi"><div class="big" id="wtSum">0원</div></div>
             <div class="chart"><canvas id="chartWeekly"></canvas></div>
             <div class="legend"><span><span class="box primary"></span>주간 합계</span></div>

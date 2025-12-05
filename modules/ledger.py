@@ -196,8 +196,14 @@ def select_month_category_spend(user_id, start, end):
         if db: db.close()
 
 
-def select_recent_weeks(user_id, n_weeks):
-    """ (주간 통계) """
+def select_recent_weeks(user_id, n_weeks: int, end_date: date | None = None):
+    """
+    (통계) 기준 날짜(end_date)까지 최근 n주간의 주별 순수입(수입-지출)을 계산합니다.
+    end_date가 None이면 오늘(date.today())를 기준으로 합니다.
+    """
+    if end_date is None:
+        end_date = date.today()
+
     db = cur = None
     try:
         db = db_connector()
@@ -208,7 +214,7 @@ def select_recent_weeks(user_id, n_weeks):
             SELECT 0 UNION ALL SELECT i + 1 FROM seq WHERE i + 1 < %s
         ),
         base AS (
-            SELECT DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) AS monday_this_week
+            SELECT DATE_SUB(%s, INTERVAL WEEKDAY(%s) DAY) AS monday_this_week
         ),
         weeks AS (
             SELECT DATE_SUB(b.monday_this_week, INTERVAL s.i WEEK) AS week_start
@@ -233,7 +239,8 @@ def select_recent_weeks(user_id, n_weeks):
         FROM agg
         ORDER BY week_start
         """
-        cur.execute(sql, (n_weeks, user_id))
+
+        cur.execute(sql, (n_weeks, end_date, end_date, user_id))
         rows = cur.fetchall()
 
         labels = [f"{r['start_label']}~{r['end_label']}" for r in rows]
