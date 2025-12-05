@@ -48,6 +48,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 function updateFormState() {
     const currentType = typeSelect.value; // '입금' 또는 '출금'
 
+    if (currentType === '입금' || currentType === '출금') {
+        typeSelect.style.maxWidth = '70px';
+    } else {
+        typeSelect.style.maxWidth = '';   // 스타일 제거 (원래 CSS로 돌아감)
+    }
+    
     // 1) 카테고리 옵션 새로 그리기
     categorySelect.innerHTML = ''; 
     

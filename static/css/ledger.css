@@ -71,7 +71,7 @@
 }
 #input-container form {
     display: flex;
-    gap: 10px;
+    gap: 5px;
     flex-wrap: wrap;
     justify-content: center;
     margin-top: 0;
@@ -85,6 +85,12 @@
 }
 #input-container.centered-prompt #input-title {
     margin-bottom: 0;
+}
+#amount{
+    max-width: 120px;
+}
+#desc{
+    max-width: 170px;
 }
 .month-navigator {
     display: flex;
