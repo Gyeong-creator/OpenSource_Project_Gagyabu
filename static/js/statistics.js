@@ -567,20 +567,7 @@ console.log('statistics.js loaded');
         }
     }
 
-    // ---------- 초기화 ----------
-    async function init() {
-        bindTabs();
-        renderBalance();
-        
-        // (신규) '지출 조언' 함수를 맨 처음에 호출
-        loadSpendingAdvice(); 
-        
-        await updateMonthlyTotalSection();  
-        await updateMonthlySpendSection();  
-        await updateWeeklySection(); 
-        updateBalanceCard();
-        updateCategoryPills();
-    }
+
 
 	if (document.readyState === 'loading')
 		document.addEventListener('DOMContentLoaded', init);
