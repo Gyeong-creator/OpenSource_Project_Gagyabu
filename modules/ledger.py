@@ -252,7 +252,7 @@ def select_recent_weeks(user_id, n_weeks):
 # INSERT, UPDATE, DELETE는 결과를 받아오는 게 아니라서 DictCursor가 필수는 아니지만,
 # 일관성을 위해 둬도 상관없고, 에러 발생 시 롤백 로직이 중요합니다.
 
-def insert_transaction(user_id, date, type, desc, amount, category=None):
+def insert_transaction(user_id, date, type, desc, amount, category=None, pay=None):
     db = None
     cursor = None
     try:
@@ -266,8 +266,7 @@ def insert_transaction(user_id, date, type, desc, amount, category=None):
         """
         # (DB 컬럼명이 'description'이므로, 'desc' 변수를 description 컬럼에 삽입)
         
-        # (!!! 수정 !!!) 'type' 변수명 충돌을 피하기 위해 'transaction_type'으로 변경
-        cursor.execute(sql, (user_id, date, transaction_type, desc, amount, category, pay))
+        cursor.execute(sql, (user_id, date, type, desc, amount, category, pay))
         db.commit()
     except Exception as e:
         if db: db.rollback()
@@ -338,8 +337,6 @@ def select_transactions_by_date(user_id, date):
             ORDER BY id ASC
         """
         
-        # pay 컬럼도 같이 조회
-        sql = "SELECT * FROM ledger WHERE user_id=%s AND date=%s ORDER BY id ASC"
         cursor.execute(sql, (user_id, date))
         return cursor.fetchall()
     except Exception as e:

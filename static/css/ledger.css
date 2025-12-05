@@ -173,7 +173,29 @@ th,
 td {
     padding: 10px;
     border-bottom: 1px solid #ccc;
+    white-space: nowrap; 
 }
+
+/* th 폰트 크기는 그대로 유지합니다. */
+th {
+    font-size: var(--font-size-sm); 
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    font-size: var(--font-size-base);
+    /*테이블 레이아웃을 고정하여 컬럼 너비가 정확하게 유지되도록 합니다.*/
+    table-layout: fixed; 
+}
+
+/* 컬럼별 너비 지정*/
+#transaction-list table th:nth-child(3), /* 카테고리 헤더 */
+#transaction-list table td:nth-child(3) {
+    width: 15%; /* 너비를 넉넉하게 설정 */
+}
+
 th {
     font-size: var(--font-size-sm); /* (신규) 글꼴 크기 적용 */
 }
@@ -278,17 +300,35 @@ tr:hover .edit-btn {
     white-space: nowrap;
 }
 
+/* 1. '오늘' 날짜 스타일 */
+.day.today {
+    background-color: #d8e2f2; /* 호버 색상과 동일 */
+    color: inherit;
+    font-weight: bold; /* 오늘 날짜는 굵게 표시 */
+} /* <--- 1번 스타일 블록 닫기 */
+
+
 /* 비활성화된 버튼 스타일 (클릭 금지 표시) */
 button:disabled {
     background-color: transparent; /* 배경 투명 */
     color: #ccc;      /* 글자색 흐리게 */
     cursor: not-allowed; /* 마우스 올리면 금지 표시 */
     opacity: 0.5;     /* 전체적으로 흐리게 */
-}
+} /* <--- 2번 스타일 블록 닫기 */
+
+
+/* 2. '선택된' 날짜 스타일 */
+.day.selected {
+    background-color: #d8e2f2; /* 호버 색상과 동일 */
+    color: inherit;
+    /* 선택된 날짜는 파란색 테두리로 한 번 더 강조 (선택 사항) */
+    box-shadow: 0 0 0 2px var(--accent) inset; 
+} /* <--- 3번 스타일 블록 닫기 */
+
 
 /* 원래 호버 효과 제거 (비활성화 상태일 때) */
 button:disabled:hover {
     color: #ccc;
     background-color: transparent;
     transform: none;
-}
+} 
