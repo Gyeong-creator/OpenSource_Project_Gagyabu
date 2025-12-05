@@ -189,8 +189,8 @@ applyBtn.onclick = async () => {
     const amount = document.getElementById('amount').value;
 
     // 1. 기본 필수값 체크
-    if (!desc || !amount || !selectedDate) {
-        return alert('내역과 금액을 입력해주세요.');
+    if (!desc || !amount || !selectedDate || !type || !category) {
+        return alert('유형, 카테고리, 내역, 금액을 모두 입력해주세요.');
     }
 
     // 2. [중요] '출금'일 때만 지불수단 필수 체크
