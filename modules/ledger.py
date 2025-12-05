@@ -266,8 +266,7 @@ def insert_transaction(user_id, date, transaction_type, desc, amount, category, 
         """
         # (DB 컬럼명이 'description'이므로, 'desc' 변수를 description 컬럼에 삽입)
         
-        # (!!! 수정 !!!) 'type' 변수명 충돌을 피하기 위해 'transaction_type'으로 변경
-        cursor.execute(sql, (user_id, date, transaction_type, desc, amount, category, pay))
+        cursor.execute(sql, (user_id, date, type, desc, amount, category, pay))
         db.commit()
     except Exception as e:
         if db: db.rollback()
@@ -338,8 +337,6 @@ def select_transactions_by_date(user_id, date):
             ORDER BY id ASC
         """
         
-        # pay 컬럼도 같이 조회
-        sql = "SELECT * FROM ledger WHERE user_id=%s AND date=%s ORDER BY id ASC"
         cursor.execute(sql, (user_id, date))
         return cursor.fetchall()
     except Exception as e:
