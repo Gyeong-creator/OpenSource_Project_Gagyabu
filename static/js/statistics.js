@@ -275,10 +275,25 @@ console.log('statistics.js loaded');
 			const cumNet = Array.from({ length: len }, (_, i) =>
 				(cumIncome[i] || 0) - (cumSpend[i] || 0)
 			);
+
+			const today = new Date();
+			let lastVal = 0;
+			let prevVal = 0;
 	
-			// KPI (오늘 값/증감)
-			const lastVal = cumNet.at(-1) || 0;
-			const prevVal = cumNet.at(-2) || 0;
+			if (year === today.getFullYear() && month === (today.getMonth() + 1)) {
+				// 현재 보고 있는 연/월이 "이번 달"인 경우 → 오늘 기준
+				let idx = today.getDate() - 1;     // 1일 → index 0
+				if (idx < 0) idx = 0;
+				if (idx >= cumNet.length) idx = cumNet.length - 1;
+		
+				lastVal = cumNet[idx] || 0;
+				prevVal = idx > 0 ? (cumNet[idx - 1] || 0) : 0;
+			} else {
+				// 과거/미래 달은 기존 로직 유지 (마지막 두 값 기준)
+				lastVal = cumNet.at(-1) || 0;
+				prevVal = cumNet.at(-2) || 0;
+			}
+		
 			const delta = lastVal - prevVal;
 	
 			document.getElementById('mtSum').textContent = won(lastVal);
