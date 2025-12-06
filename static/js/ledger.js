@@ -48,20 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 function updateFormState() {
     const currentType = typeSelect.value; // '입금' 또는 '출금'
 
-    if (currentType === '입금' || currentType === '출금') {
-        typeSelect.style.maxWidth = '70px';
-    } else {
-        typeSelect.style.maxWidth = '';   // 스타일 제거 (원래 CSS로 돌아감)
-    }
-    
     // 1) 카테고리 옵션 새로 그리기
     categorySelect.innerHTML = ''; 
-    
-    // (선택 편의를 위해 기본 안내 옵션 추가)
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = '카테고리 선택';
-    categorySelect.appendChild(defaultOption);
 
     // 선택된 유형에 맞는 리스트 가져오기
     const list = categoryList[currentType]; 
@@ -84,20 +72,21 @@ function updateFormState() {
     }
 }
 
+
 /**
- * (수정) 달력을 생성하고 화면에 렌더링하는 함수
+
+ * 달력을 생성하고 화면에 렌더링하는 함수
+
  */
-function renderCalendar(date) {
+async function renderCalendar(date) {
     calendarDiv.innerHTML = '';
     const year = date.getFullYear();
     const month = date.getMonth();
 
-    // --- (신규) '오늘' 날짜 정보 가져오기 ---
     const today = new Date();
     const todayDate = today.getDate();
     const todayMonth = today.getMonth();
     const todayYear = today.getFullYear();
-    // --- (신규) ---
 
     currentMonthTitle.textContent = `${year}년 ${month + 1}월`;
     const firstDayOfMonth = new Date(year, month, 1);
@@ -110,28 +99,75 @@ function renderCalendar(date) {
         emptyDay.classList.add('day', 'empty');
         calendarDiv.appendChild(emptyDay);
     }
+
     for (let i = 1; i <= totalDays; i++) {
         const day = document.createElement('div');
         day.classList.add('day');
         day.textContent = i;
 
-        // --- (신규) '오늘' 및 '선택' 날짜 확인 ---
         const monthStr = String(month + 1).padStart(2, '0');
         const dayStr = String(i).padStart(2, '0');
         const currentDayStr = `${year}-${monthStr}-${dayStr}`;
 
-        // 1. '오늘' 날짜 확인
+        // [핵심] 날짜 식별을 위해 데이터 속성 추가
+        day.dataset.date = currentDayStr;
+
         if (i === todayDate && month === todayMonth && year === todayYear) {
             day.classList.add('today');
         }
-        // 2. '선택된' 날짜 확인 (global 'selectedDate' 변수와 비교)
         if (currentDayStr === selectedDate) {
             day.classList.add('selected');
         }
-        // --- (신규) ---
 
         day.onclick = () => selectDate(year, month, i);
         calendarDiv.appendChild(day);
+    }
+
+    // [추가] 달력을 다 그린 후, 내역이 있는 날짜에 색칠하기
+    await markActiveDates(year, month + 1);
+}
+
+/**
+ * [신규] 서버에서 내역 있는 날짜를 받아와 표시하는 함수
+ */
+async function markActiveDates(year, month) {
+    try {
+        const res = await fetch(`/month-active-dates?year=${year}&month=${month}`);
+        if (!res.ok) return;
+
+        const activeDates = await res.json(); 
+
+        const days = calendarDiv.querySelectorAll('.day:not(.empty)');
+        days.forEach(dayDiv => {
+            if (activeDates.includes(dayDiv.dataset.date)) {
+                dayDiv.classList.add('has-transaction');
+            }
+        });
+    } catch (e) {
+        console.error("날짜 표시 실패:", e);
+    }
+}
+
+/**
+ * [신규] 해당 월의 내역이 있는 날짜를 가져와 클래스를 추가하는 함수
+ */
+async function markActiveDates(year, month) {
+    try {
+        // 3단계에서 만든 Flask 라우트 호출
+        const res = await fetch(`/month-active-dates?year=${year}&month=${month}`);
+        if (!res.ok) return;
+
+        const activeDates = await res.json(); // 예: ['2025-05-01', '2025-05-15']
+
+        // 달력의 모든 날짜 칸을 돌면서, 내역 리스트에 포함된 날짜면 클래스 추가
+        const days = calendarDiv.querySelectorAll('.day:not(.empty)');
+        days.forEach(dayDiv => {
+            if (activeDates.includes(dayDiv.dataset.date)) {
+                dayDiv.classList.add('has-transaction');
+            }
+        });
+    } catch (e) {
+        console.error("내역 날짜 표시 실패:", e);
     }
 }
 
@@ -147,7 +183,7 @@ async function refreshCurrentList() {
 }
 
 /**
- * (수정) 날짜를 선택했을 때 호출되는 함수
+ * 날짜를 선택했을 때 호출되는 함수
  */
 async function selectDate(year, month, day) {
     document.getElementById('input-container').classList.remove('centered-prompt');
@@ -157,9 +193,8 @@ async function selectDate(year, month, day) {
     const dayStr = String(day).padStart(2, '0');
     selectedDate = `${year}-${monthStr}-${dayStr}`; // ◀ 전역 변수 설정
 
-    // --- (신규) 날짜 클릭 시 달력을 새로고침하여 .selected 클래스 적용 ---
+    // 날짜 클릭 시 달력을 새로고침하여 .selected 클래스 적용 ---
     renderCalendar(currentDate); 
-    // --- (신규) ---
     
     inputTitle.textContent = `${selectedDate} 내역 입력`;
     form.style.display = 'flex';
@@ -198,8 +233,8 @@ applyBtn.onclick = async () => {
     const amount = document.getElementById('amount').value;
 
     // 1. 기본 필수값 체크
-    if (!desc || !amount || !selectedDate) {
-        return alert('내역과 금액을 입력해주세요.');
+    if (!desc || !amount || !selectedDate || !type || !category) {
+        return alert('유형, 카테고리, 내역, 금액을 모두 입력해주세요.');
     }
 
     // 2. [중요] '출금'일 때만 지불수단 필수 체크
@@ -269,7 +304,7 @@ listDiv.addEventListener('click', async function(event) {
 });
 
 /**
- * (수정) '수정' <-> '저장' 모드 전환 함수
+ * '수정' <-> '저장' 모드 전환 함수
  * - 다른 버튼 잠금 기능 추가
  */
 function toggleEditMode(tr, isEditing) {
@@ -281,7 +316,7 @@ function toggleEditMode(tr, isEditing) {
     const saveBtn = tr.querySelector('.save-btn');
     const cancelBtn = tr.querySelector('.cancel-btn');
 
-    // 1. [신규] 모든 수정/삭제 버튼 잠금/해제 처리
+    // 1. 모든 수정/삭제 버튼 잠금/해제 처리
     // listDiv는 상단에 선언된 전역 변수(transaction-list)입니다.
     const allEditBtns = listDiv.querySelectorAll('.edit-btn');
     const allDeleteBtns = listDiv.querySelectorAll('.delete-btn');
@@ -318,13 +353,18 @@ function toggleEditMode(tr, isEditing) {
             const list = categoryList[currentType] || [];
             
             categorySelect.innerHTML = '';
+
             list.forEach(cat => {
                 const option = document.createElement('option');
                 option.value = cat;
                 option.textContent = cat;
+                
+                // 현재 행의 원래 카테고리 값과 일치하면 선택되도록 함
                 if (cat === originalCategoryVal) option.selected = true;
+
                 categorySelect.appendChild(option);
             });
+            // 최종적으로 값이 유지되도록 한 번 더 명시
             categorySelect.value = originalCategoryVal;
         };
 
@@ -343,13 +383,18 @@ function toggleEditMode(tr, isEditing) {
         typeSelect.onchange = function() {
             const newType = this.value;
             const newList = categoryList[newType] || [];
+            
+            // 카테고리 드롭다운을 초기화
             categorySelect.innerHTML = '';
+
+            // 새 카테고리 옵션을 추가
             newList.forEach(cat => {
                 const option = document.createElement('option');
                 option.value = cat;
                 option.textContent = cat;
                 categorySelect.appendChild(option);
             });
+
             toggleRowPay();
         };
     }
@@ -476,6 +521,11 @@ function updateList(transactions) {
                     <td>
                         <span class="display-field">${catVal}</span>
                         <select class="edit-field edit-category" style="display:none;">
+                            <option value="급여" ${catVal==='급여'?'selected':''}>급여</option>
+                            <option value="금융소득" ${catVal==='금융소득'?'selected':''}>금융소득</option>
+                            <option value="용돈/지원금" ${catVal==='용돈/지원금'?'selected':''}>용돈/지원금</option>
+                            <option value="기타" ${catVal==='기타'?'selected':''}>기타</option>
+                            
                             <option value="식비" ${catVal==='식비'?'selected':''}>식비</option>
                             <option value="주거/통신" ${catVal==='주거/통신'?'selected':''}>주거/통신</option>
                             <option value="교통/차량" ${catVal==='교통/차량'?'selected':''}>교통/차량</option>
