@@ -48,11 +48,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 function updateFormState() {
     const currentType = typeSelect.value; // '입금' 또는 '출금'
 
+    if (currentType === '입금' || currentType === '출금') {
+        typeSelect.style.maxWidth = '70px';
+    } else {
+        typeSelect.style.maxWidth = '';   // 스타일 제거 (원래 CSS로 돌아감)
+    }
+
+
     // 1) 카테고리 옵션 새로 그리기
     categorySelect.innerHTML = ''; 
 
     // 선택된 유형에 맞는 리스트 가져오기
     const list = categoryList[currentType]; 
+    
+    // (선택 편의를 위해 기본 안내 옵션 추가)
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = '카테고리 선택';
+    categorySelect.appendChild(defaultOption);
     
     if (list) {
         list.forEach(cat => {

@@ -114,6 +114,7 @@ console.log('statistics.js loaded');
 				await updateMonthlySpendSection();
 				updateCategoryPills();
 				updateMonthNavButtons();
+				await updateBalanceCard();
 			});
 	
 			if (after1) after1.addEventListener('click', async () => {
@@ -127,6 +128,7 @@ console.log('statistics.js loaded');
 				await updateMonthlySpendSection();
 				updateCategoryPills();
 				updateMonthNavButtons();
+				await updateBalanceCard();
 			});
 	
 			// 월간 지출 카드의 화살표도 같은 monthYM을 공유하도록 동일 동작
@@ -136,6 +138,7 @@ console.log('statistics.js loaded');
 				await updateMonthlySpendSection();
 				updateCategoryPills();
 				updateMonthNavButtons();
+				await updateBalanceCard();
 			});
 	
 			if (after2) after2.addEventListener('click', async () => {
@@ -148,6 +151,7 @@ console.log('statistics.js loaded');
 				await updateMonthlySpendSection();
 				updateCategoryPills();
 				updateMonthNavButtons();
+				await updateBalanceCard();
 			});
 	
 			// --- 주간 합계: 10주씩 이동 ---
@@ -303,37 +307,34 @@ console.log('statistics.js loaded');
 	
 
 	// --- 이번 달 남은 돈 카드 업데이트 ---
-	async function updateBalanceCard() {
-		const now = new Date();
-		const y = now.getFullYear();
-		const m = now.getMonth() + 1;
-	
-		// 이번 달 데이터 한 번만 호출
-		const d = await fetchMonthlySpend(y, m);
-	
-		// API가 totals를 주면 그걸 쓰고, 없으면 누적 마지막 값을 fallback
-		const income   = (d.totalIncome   ?? (d.cumIncome?.at(-1)   || 0)) | 0;
-		const spend    = (d.totalSpend    ?? (d.cumSpend?.at(-1)    || 0)) | 0;
-		const card     = (d.totalCard     ?? (d.cumCard?.at(-1)     || 0)) | 0;
-		const transfer = (d.totalTransfer ?? (d.cumTransfer?.at(-1) || 0)) | 0;
-	
-		// 페이/기타는 서버에서 오면 사용, 없으면 (총지출 - 카드 - 이체)로 계산
-		const otherRaw = (d.totalOther ?? (d.cumOther?.at(-1)));
-		const other    = Number.isFinite(otherRaw) ? otherRaw : Math.max(0, spend - card - transfer);
-	
-		// DOM 반영
-		document.getElementById('incomeTotal').textContent   = won(income);
-		document.getElementById('expenseTotal').textContent  = won(spend);
-		document.getElementById('expenseCard').textContent   = won(card);
-		document.getElementById('expenseTransfer').textContent = won(transfer);
-		document.getElementById('expenseOther').textContent  = won(other);
-	
-		const remain = income - spend;
-		const el = document.getElementById('remainAmount');
-		el.textContent = (remain >= 0 ? '' : '-') + won(Math.abs(remain));
-		el.style.color = remain >= 0 ? 'var(--good)' : '#2563eb'; // 파랑(마이너스)
-	}
-  
+	// --- 이번 달 남은 돈 카드 업데이트 ---
+async function updateBalanceCard(year = monthYM.year, month = monthYM.month) {
+    //const now = new Date();
+    //const y = now.getFullYear();
+    //const m = now.getMonth() + 1;
+
+    const d = await fetchMonthlySpend(year, month);
+
+    const income   = (d.totalIncome   ?? (d.cumIncome?.at(-1)   || 0)) | 0;
+    const spend    = (d.totalSpend    ?? (d.cumSpend?.at(-1)    || 0)) | 0;
+    const card     = (d.totalCard     ?? (d.cumCard?.at(-1)     || 0)) | 0;
+    const transfer = (d.totalTransfer ?? (d.cumTransfer?.at(-1) || 0)) | 0;
+
+    const otherRaw = (d.totalOther ?? (d.cumOther?.at(-1)));
+    const other    = Number.isFinite(otherRaw) ? otherRaw : Math.max(0, spend - card - transfer);
+
+    document.getElementById('incomeTotal').textContent   = won(income);
+    document.getElementById('expenseTotal').textContent  = won(spend);
+    document.getElementById('expenseCard').textContent   = won(card);
+    document.getElementById('expenseTransfer').textContent = won(transfer);
+    document.getElementById('expenseOther').textContent  = won(other);
+
+    const remain = income - spend;
+    const el = document.getElementById('remainAmount');
+    el.textContent = (remain >= 0 ? '' : '-') + won(Math.abs(remain));
+    el.style.color = remain >= 0 ? 'var(--good)' : '#2563eb';
+}
+
   
   
 
