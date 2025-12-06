@@ -331,10 +331,69 @@ def stats_spending_advice():
         elif TMS > TMI:
              warning_message = "이번 달 수입보다 지출이 더 많습니다! 지출 관리가 필요합니다."
 
+@app.route('/api/stats/spending-advice')
+def stats_spending_advice():
+    """
+    (신규) 지출 조언 API
+    로직: (지난달 예산 + 이번달 수입) 대비 이번달 지출이 70% 넘으면 경고
+    """
+    user_id = session.get('id')
+    if not user_id:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+
+    try:
+        # --- 1. 이번 달 정보 계산 ---
+        today = date.today()
+        this_month_start = today.replace(day=1)
+        this_month_days = monthrange(today.year, today.month)[1]
+        next_month_start = (this_month_start + timedelta(days=32)).replace(day=1)
+
+        # 님 BAEK 님 BAEK의 기존 함수를 재활용하여 '이번 달' 데이터 가져오기
+        this_month_data = ledger_db.select_month_daily_spend_income(
+            user_id, this_month_start, next_month_start, 
+            today.year, today.month, this_month_days
+        )
+
+        TMI = this_month_data.get('totalIncome', 0) # This Month Income
+        TMS = this_month_data.get('totalSpend', 0)  # This Month Spending
+
+        # --- 2. 지난달 정보 계산 ---
+        last_month_end = this_month_start
+        last_month_start = (last_month_end - timedelta(days=1)).replace(day=1)
+        last_month_year = last_month_start.year
+        last_month_month = last_month_start.month
+        last_month_days = monthrange(last_month_year, last_month_month)[1]
+
+        # 님 BAEK 님 BAEK의 기존 함수를 재활용하여 '지난달' 데이터 가져오기
+        last_month_data = ledger_db.select_month_daily_spend_income(
+            user_id, last_month_start, last_month_end,
+            last_month_year, last_month_month, last_month_days
+        )
+
+        LMI = last_month_data.get('totalIncome', 0) # Last Month Income
+        LMS = last_month_data.get('totalSpend', 0)  # Last Month Spending
+
+        # --- 3. 조언 로직 계산 ---
+        last_month_budget = LMI - LMS  # (지난달 수입 - 지난달 지출)
+        total_allowable = last_month_budget + TMI # (지난달 예산 + 이번달 수입)
+
+        warning_message = None
+
+        if total_allowable > 0:
+            spending_ratio = TMS / total_allowable
+
+            if spending_ratio > 0.7: # 70% 초과 시
+                warning_message = f"지출이 총 예산의 {spending_ratio*100:.0f}%에 도달했습니다! 지출에 유의하세요."
+            elif TMS > TMI: # (보너스) 이번달 수입보다 지출이 많을 때
+                warning_message = "이번 달 수입보다 지출이 더 많습니다! 지출 관리가 필요합니다."
+
+        # 4. JSON으로 '조언' 반환
+
         return jsonify({'advice': warning_message})
 
     except Exception as e:
         print(f"[API ADVICE ERROR] {type(e).__name__}: {e}")
+
         return jsonify({'error': str(e)}), 500
 
 # ====================== 서버 실행 ======================
