@@ -194,14 +194,8 @@ def select_month_category_spend(user_id, start, end):
         if db: db.close()
 
 
-def select_recent_weeks(user_id, n_weeks: int, end_date: date | None = None):
-    """
-    (통계) 기준 날짜(end_date)까지 최근 n주간의 주별 순수입(수입-지출)을 계산합니다.
-    end_date가 None이면 오늘(date.today())를 기준으로 합니다.
-    """
-    if end_date is None:
-        end_date = date.today()
-
+def select_recent_weeks(user_id, n_weeks):
+    """ (주간 통계) """
     db = cur = None
     try:
         db = db_connector()
@@ -212,7 +206,7 @@ def select_recent_weeks(user_id, n_weeks: int, end_date: date | None = None):
             SELECT 0 UNION ALL SELECT i + 1 FROM seq WHERE i + 1 < %s
         ),
         base AS (
-            SELECT DATE_SUB(%s, INTERVAL WEEKDAY(%s) DAY) AS monday_this_week
+            SELECT DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) AS monday_this_week
         ),
         weeks AS (
             SELECT DATE_SUB(b.monday_this_week, INTERVAL s.i WEEK) AS week_start
@@ -237,8 +231,7 @@ def select_recent_weeks(user_id, n_weeks: int, end_date: date | None = None):
         FROM agg
         ORDER BY week_start
         """
-
-        cur.execute(sql, (n_weeks, end_date, end_date, user_id))
+        cur.execute(sql, (n_weeks, user_id))
         rows = cur.fetchall()
 
         labels = [f"{r['start_label']}~{r['end_label']}" for r in rows]
@@ -248,6 +241,33 @@ def select_recent_weeks(user_id, n_weeks: int, end_date: date | None = None):
     except Exception as e:
         print(f"[STATS WEEKLY ERROR] {e}")
         return {"labels": [], "net": []}
+    finally:
+        if cur: cur.close()
+        if db: db.close()
+
+def select_month_active_days(user_id, year, month):
+    """ 해당 연/월에 내역이 존재하는 날짜 리스트 조회 """
+    db = None
+    cur = None
+    try:
+        db = db_connector()
+        cur = db.cursor(pymysql.cursors.DictCursor)
+
+        sql = """
+            SELECT DISTINCT DATE(date) as d
+            FROM ledger
+            WHERE user_id = %s 
+              AND YEAR(date) = %s 
+              AND MONTH(date) = %s
+        """
+        cur.execute(sql, (user_id, year, month))
+        rows = cur.fetchall()
+        
+        return [str(r['d']) for r in rows]
+
+    except Exception as e:
+        print(f"[ACTIVE DAYS ERROR] {e}")
+        return []
     finally:
         if cur: cur.close()
         if db: db.close()
@@ -269,6 +289,8 @@ def insert_transaction(user_id, date, transaction_type, desc, amount, category, 
         """
         
         cursor.execute(sql, (user_id, date, transaction_type, desc, amount, category, pay))
+
+
         db.commit()
     except Exception as e:
         if db: db.rollback()
@@ -293,8 +315,7 @@ def delete_transaction_by_id(transaction_id, user_id):
         if cursor: cursor.close()
         if db: db.close()
 
-def update_transaction(trans_id, user_id, date, type, desc, amount, category, pay):
-    """ (신규) ID와 일치하는 거래 내역을 수정합니다. """
+def update_transaction(trans_id, user_id, date, type, desc, amount):
     db = None
     cursor = None
     try:
@@ -302,19 +323,10 @@ def update_transaction(trans_id, user_id, date, type, desc, amount, category, pa
         cursor = db.cursor()
         sql = """
             UPDATE ledger 
-            SET 
-                date = %s, 
-                type = %s, 
-                description = %s,
-                amount = %s,
-                category = %s,
-                pay = %s
-            WHERE 
-                id = %s AND user_id = %s
+            SET date=%s, type=%s, description=%s, amount=%s 
+            WHERE id=%s AND user_id=%s
         """
-        
-        # (참고) insert와 순서가 다름 (id, user_id가 WHERE절로 감)
-        affected_rows = cursor.execute(sql, (date, type, desc, amount,category, pay, trans_id, user_id))
+        cursor.execute(sql, (date, type, desc, amount, trans_id, user_id))
         db.commit()
     except Exception as e:
         if db: db.rollback()
@@ -327,18 +339,11 @@ def select_transactions_by_date(user_id, date):
     db = None
     cursor = None
     try:
-        db = db_connector() # 기존 DB 연결 함수
+        db = db_connector()
+        cursor = db.cursor(pymysql.cursors.DictCursor) # [수정]
         
-        # 결과를 딕셔너리로 받기 위해 DictCursor 사용
-        cursor = db.cursor(pymysql.cursors.DictCursor) 
-        
-        sql = """
-            SELECT id, user_id, date, type, description, amount, category, pay 
-            FROM ledger 
-            WHERE user_id = %s AND date = %s
-            ORDER BY id ASC
-        """
-        
+        # pay 컬럼도 같이 조회
+        sql = "SELECT * FROM ledger WHERE user_id=%s AND date=%s ORDER BY id ASC"
         cursor.execute(sql, (user_id, date))
         return cursor.fetchall()
     except Exception as e:

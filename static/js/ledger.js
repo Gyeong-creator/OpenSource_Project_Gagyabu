@@ -48,12 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 function updateFormState() {
     const currentType = typeSelect.value; // '입금' 또는 '출금'
 
-    if (currentType === '입금' || currentType === '출금') {
-        typeSelect.style.maxWidth = '70px';
-    } else {
-        typeSelect.style.maxWidth = '';   // 스타일 제거 (원래 CSS로 돌아감)
-    }
-    
     // 1) 카테고리 옵션 새로 그리기
     categorySelect.innerHTML = ''; 
 
@@ -78,15 +72,17 @@ function updateFormState() {
     }
 }
 
+
 /**
+
  * 달력을 생성하고 화면에 렌더링하는 함수
+
  */
-function renderCalendar(date) {
+async function renderCalendar(date) {
     calendarDiv.innerHTML = '';
     const year = date.getFullYear();
     const month = date.getMonth();
 
-    // --- '오늘' 날짜 정보 가져오기 ---
     const today = new Date();
     const todayDate = today.getDate();
     const todayMonth = today.getMonth();
@@ -103,27 +99,75 @@ function renderCalendar(date) {
         emptyDay.classList.add('day', 'empty');
         calendarDiv.appendChild(emptyDay);
     }
+
     for (let i = 1; i <= totalDays; i++) {
         const day = document.createElement('div');
         day.classList.add('day');
         day.textContent = i;
 
-        // --- '오늘' 및 '선택' 날짜 확인 ---
         const monthStr = String(month + 1).padStart(2, '0');
         const dayStr = String(i).padStart(2, '0');
         const currentDayStr = `${year}-${monthStr}-${dayStr}`;
 
-        // 1. '오늘' 날짜 확인
+        // [핵심] 날짜 식별을 위해 데이터 속성 추가
+        day.dataset.date = currentDayStr;
+
         if (i === todayDate && month === todayMonth && year === todayYear) {
             day.classList.add('today');
         }
-        // 2. '선택된' 날짜 확인 (global 'selectedDate' 변수와 비교)
         if (currentDayStr === selectedDate) {
             day.classList.add('selected');
         }
 
         day.onclick = () => selectDate(year, month, i);
         calendarDiv.appendChild(day);
+    }
+
+    // [추가] 달력을 다 그린 후, 내역이 있는 날짜에 색칠하기
+    await markActiveDates(year, month + 1);
+}
+
+/**
+ * [신규] 서버에서 내역 있는 날짜를 받아와 표시하는 함수
+ */
+async function markActiveDates(year, month) {
+    try {
+        const res = await fetch(`/month-active-dates?year=${year}&month=${month}`);
+        if (!res.ok) return;
+
+        const activeDates = await res.json(); 
+
+        const days = calendarDiv.querySelectorAll('.day:not(.empty)');
+        days.forEach(dayDiv => {
+            if (activeDates.includes(dayDiv.dataset.date)) {
+                dayDiv.classList.add('has-transaction');
+            }
+        });
+    } catch (e) {
+        console.error("날짜 표시 실패:", e);
+    }
+}
+
+/**
+ * [신규] 해당 월의 내역이 있는 날짜를 가져와 클래스를 추가하는 함수
+ */
+async function markActiveDates(year, month) {
+    try {
+        // 3단계에서 만든 Flask 라우트 호출
+        const res = await fetch(`/month-active-dates?year=${year}&month=${month}`);
+        if (!res.ok) return;
+
+        const activeDates = await res.json(); // 예: ['2025-05-01', '2025-05-15']
+
+        // 달력의 모든 날짜 칸을 돌면서, 내역 리스트에 포함된 날짜면 클래스 추가
+        const days = calendarDiv.querySelectorAll('.day:not(.empty)');
+        days.forEach(dayDiv => {
+            if (activeDates.includes(dayDiv.dataset.date)) {
+                dayDiv.classList.add('has-transaction');
+            }
+        });
+    } catch (e) {
+        console.error("내역 날짜 표시 실패:", e);
     }
 }
 
