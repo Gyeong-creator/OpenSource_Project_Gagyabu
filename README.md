@@ -51,6 +51,17 @@
 	</tr>
 </table>
 
+### Repository Stats
+
+
+![Commit Activity](https://img.shields.io/github/commit-activity/m/Gyeong-creator/-5-)
+![Last Commit](https://img.shields.io/github/last-commit/Gyeong-creator/-5-)
+![Contributors](https://img.shields.io/github/contributors/Gyeong-creator/-5-)
+![Commits](https://badgen.net/github/commits/Gyeong-creator/-5-)
+![Repo Size](https://img.shields.io/github/repo-size/Gyeong-creator/-5-)
+
+
+
 
 ### Tech Stacks
 <img src="https://img.shields.io/badge/python-3776AB?style=for-the-badge&logo=python&logoColor=white">
