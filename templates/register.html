@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    
+    </head>
+
+<body class="login-body">
+    <div class="login-container">
+        <div class="logo">🔏</div> 
+        <h2>회원가입</h2>
+
+        <form id="signup-form">
+
+            <div class="input-container">
+                <input type="text" placeholder="ID를 입력하세요" class="input-field" id="signup-id">
+            </div>
+
+            <div class="input-container">
+                <input type="text" placeholder="이름을 입력하세요" class="input-field" id="signup-name">
+            </div>
+
+            <div class="input-container">
+                <input type="password" placeholder="비밀번호를 입력하세요" class="input-field" id="signup-password">
+                <span class="toggle-password" id="signup-toggle-password">보기</span>
+            </div>
+
+            <div class="input-container">
+                <input type="password" placeholder="비밀번호를 다시 입력하세요" class="input-field" id="signup-password-confirm">
+            </div>
+
+            <button type="submit" class="btn" id="signup-btn">회원가입</button>
+        </form>
+
+        <div class="login-subtext">
+            이미 계정이 있으신가요?
+            <a href="{{ url_for('login_view') }}">로그인 하기</a> 
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/register.js') }}"></script>
+</body>
+</html>

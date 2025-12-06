@@ -2,15 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Login Page</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
-    <!--
-        <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-    -->   
 </head>
-<body>
-    <h1>로그인페이지</h1>
+
+<body class="login-body">
+    <div class="login-container">
+        <div class="logo">🔒</div>
+        <h2>로그인</h2>
+        <form>
+        <div class="input-container">
+            <input type="text" placeholder="ID를 입력하세요" class="input-field" required id="id-field">
+        </div>
+        <div class="input-container">
+            <input type="password" placeholder="비밀번호를 입력하세요" id="password-field" class="input-field" required>
+            <span class="toggle-password" id="toggle-password">보기</span>
+        </div>
+        <button type="submit" class="btn" id="login-btn">로그인</button>
+        </form>
+        
+        <div class="login-subtext">
+            계정이 없으신가요?
+            <a href="{{ url_for('register_view') }}">회원가입 하기</a> 
+        </div>
+        </div>
+
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+
 </body>
 </html>
