@@ -46,6 +46,8 @@
 ### 3. 내역 등록
 - 날짜를 클릭 후 수입/지출 내역을 등록할 수 있습니다.
 - 유형(입금/출금), 카테고리, 지불수단, 내역, 금액을 입력합니다.
+<img width="1007" height="216" alt="image" src="https://github.com/user-attachments/assets/dde9bf27-34bc-4ba0-9ab8-e217867f29db" />
+
 
 <table>
   <tr>
@@ -66,7 +68,7 @@
 
 **[등록된 내역 수정 및 삭제]**
 - 연필 아이콘을 클릭하면 내역을 수정할 수 있습니다.
-- X 아이콘을 누르면 내역을 삭제할 수 있습니다.
+- X 아이콘을 클릭하면 내역을 삭제할 수 있습니다.
 
 <img src="https://github.com/user-attachments/assets/8963dd7a-d898-4ad2-b0be-57ad8eabc2f5" width="100%">
 <img width="992" height="257" alt="image" src="https://github.com/user-attachments/assets/4482dfa5-db34-4c5f-bfa8-e94fe418efe2" width="100%">
