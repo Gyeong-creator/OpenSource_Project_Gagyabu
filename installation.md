@@ -70,7 +70,11 @@ CREATE DATABASE gagyabu DEFAULT CHARACTER SET utf8mb4;
 > 직접 테이블을 만들어도 되고, 백업 파일을 복원해서 바로 테스트해도 됩니다.  
 > 데이터 구조는 README/문서에 포함된 ERD와 동일합니다.
 
-<br>
+<img width="497" height="101" alt="Screenshot 2025-12-12 at 8 51 58 AM" src="https://github.com/user-attachments/assets/23719d72-707e-45f0-9e9e-64d2fff502f5" />
+
+<br><img width="497" height="178" alt="Screenshot 2025-12-12 at 8 52 15 AM" src="https://github.com/user-attachments/assets/f4ab6eff-5172-4bbd-84e1-792b98abd934" />
+
+<img width="320" height="217" alt="Screenshot 2025-12-12 at 8 52 27 AM" src="https://github.com/user-attachments/assets/75f18dbc-7bc5-4ebd-8c08-f65a5da7cc60" />
 
 ### 4. 필수 설정 파일 생성
 일부 파일은 `.gitignore`에 포함되어 있어, 각자 로컬에서 직접 생성해야 합니다.
