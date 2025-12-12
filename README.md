@@ -9,8 +9,13 @@
 
 <br>
 
-## 📖 가계부 사용법
+## 📖 설치
+- 아래 문서 참고
+https://github.com/Gyeong-creator/OpenSource_Project_Gagyabu/blob/main/installation.md
 
+<br>
+
+## 📖 가계부 사용법
 ### 1. 로그인 및 회원가입
 - ID와 비밀번호 입력 후 로그인합니다.<br>
 - 계정이 없다면, '회원가입 하기' 버튼을 클릭하여 가입할 수 있습니다.
